@@ -29,9 +29,8 @@ export default async function MemberPrintPage({ params }: { params: Params }) {
         </Link>
         <button
           type="button"
-          onClick={() => {}}
+          id="print-btn"
           className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white"
-          // print via script tag below for progressive enhancement without client component
         >
           Print
         </button>
@@ -39,7 +38,7 @@ export default async function MemberPrintPage({ params }: { params: Params }) {
 
       <script
         dangerouslySetInnerHTML={{
-          __html: `document.querySelector('button')?.addEventListener('click',()=>window.print());`,
+          __html: `document.getElementById('print-btn')?.addEventListener('click',()=>window.print());`,
         }}
       />
 
