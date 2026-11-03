@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ltjbm-cdms-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: cdms
+      POSTGRES_PASSWORD: cdms
+      POSTGRES_DB: cdms
+    volumes:
+      - cdms_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cdms -d cdms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  cdms_pgdata:
