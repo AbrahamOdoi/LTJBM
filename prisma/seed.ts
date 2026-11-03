@@ -144,13 +144,257 @@ async function main() {
     }
   }
 
+  // ── Finance demo slice (minimal members; full ≥100 biodata is Members-owned)
+  const cell = await prisma.cell.upsert({
+    where: { branchId_name: { branchId: eastLegon.id, name: "Cell A" } },
+    update: {},
+    create: { name: "Cell A", branchId: eastLegon.id },
+  });
+
+  const mens = await prisma.fellowshipMinistry.findUniqueOrThrow({
+    where: { code: "MEN" },
+  });
+  const types = Object.fromEntries(
+    (
+      await prisma.obligationType.findMany({
+        where: {
+          code: {
+            in: ["PLEDGE", "TITHE", "DUES", "SPECIAL_PROJECT", "THANKSGIVING"],
+          },
+        },
+      })
+    ).map((t) => [t.code, t]),
+  );
+
+  const memberSpecs = [
+    {
+      memberNumber: "FIN-001",
+      firstName: "Kwame",
+      lastName: "Mensah",
+      phone: "+233201111001",
+    },
+    {
+      memberNumber: "FIN-002",
+      firstName: "Ama",
+      lastName: "Owusu",
+      phone: "+233201111002",
+    },
+    {
+      memberNumber: "FIN-003",
+      firstName: "Kojo",
+      lastName: "Asante",
+      phone: "+233201111003",
+    },
+  ] as const;
+
+  const financeMembers = [];
+  for (const spec of memberSpecs) {
+    const member = await prisma.member.upsert({
+      where: { memberNumber: spec.memberNumber },
+      update: {
+        firstName: spec.firstName,
+        lastName: spec.lastName,
+        phone: spec.phone,
+        branchId: eastLegon.id,
+        status: "Active",
+      },
+      create: {
+        memberNumber: spec.memberNumber,
+        firstName: spec.firstName,
+        lastName: spec.lastName,
+        phone: spec.phone,
+        country: "Ghana",
+        branchId: eastLegon.id,
+        status: "Active",
+      },
+    });
+    financeMembers.push(member);
+
+    const existingGroups = await prisma.groupMembership.count({
+      where: { memberId: member.id, endedAt: null },
+    });
+    if (existingGroups === 0) {
+      await prisma.groupMembership.createMany({
+        data: [
+          { memberId: member.id, kind: "Cell", cellId: cell.id },
+          {
+            memberId: member.id,
+            kind: "Fellowship",
+            fellowshipMinistryId: mens.id,
+          },
+        ],
+      });
+    }
+  }
+
+  const [kwame, ama, kojo] = financeMembers;
+  const periodStart = new Date("2026-01-01T00:00:00.000Z");
+  const saturday = new Date("2026-11-01T00:00:00.000Z");
+
+  // Idempotent finance demo: wipe prior demo obligations for these members
+  await prisma.payment.deleteMany({
+    where: { obligation: { memberId: { in: financeMembers.map((m) => m.id) } } },
+  });
+  await prisma.obligation.deleteMany({
+    where: { memberId: { in: financeMembers.map((m) => m.id) } },
+  });
+  await prisma.collectionBatch.deleteMany({
+    where: { label: "Saturday collection (seed demo)" },
+  });
+
+  const pledge = await prisma.obligation.create({
+    data: {
+      memberId: kwame.id,
+      obligationTypeId: types.PLEDGE.id,
+      periodStart,
+      periodEnd: new Date("2026-12-31T00:00:00.000Z"),
+      expectedAmount: 1200,
+      instalmentCount: 3,
+      notes: "Seed: pledge with instalment plan",
+    },
+  });
+  await prisma.payment.createMany({
+    data: [
+      {
+        obligationId: pledge.id,
+        amount: 400,
+        paidAt: new Date("2026-02-01T00:00:00.000Z"),
+        method: "MoMo",
+        reference: "PLEDGE-1",
+      },
+      {
+        obligationId: pledge.id,
+        amount: 400,
+        paidAt: new Date("2026-03-01T00:00:00.000Z"),
+        method: "MoMo",
+        reference: "PLEDGE-2",
+      },
+    ],
+  });
+
+  const special = await prisma.obligation.create({
+    data: {
+      memberId: ama.id,
+      obligationTypeId: types.SPECIAL_PROJECT.id,
+      fellowshipMinistryId: mens.id,
+      periodStart,
+      expectedAmount: 500,
+      projectTargetAmount: 25000,
+      notes: "Seed: special project with overall target",
+    },
+  });
+  await prisma.payment.createMany({
+    data: [
+      {
+        obligationId: special.id,
+        amount: 200,
+        paidAt: new Date("2026-04-01T00:00:00.000Z"),
+        method: "Cash",
+        reference: "SP-1",
+      },
+      {
+        obligationId: special.id,
+        amount: 150,
+        paidAt: new Date("2026-05-01T00:00:00.000Z"),
+        method: "Bank",
+        reference: "SP-2",
+      },
+    ],
+  });
+
+  const tithe = await prisma.obligation.create({
+    data: {
+      memberId: kwame.id,
+      obligationTypeId: types.TITHE.id,
+      periodStart: saturday,
+      expectedAmount: 150,
+    },
+  });
+  const thanksgiving = await prisma.obligation.create({
+    data: {
+      memberId: ama.id,
+      obligationTypeId: types.THANKSGIVING.id,
+      periodStart: saturday,
+      expectedAmount: 100,
+    },
+  });
+  const duesPaid = await prisma.obligation.create({
+    data: {
+      memberId: kojo.id,
+      obligationTypeId: types.DUES.id,
+      periodStart: saturday,
+      expectedAmount: 50,
+    },
+  });
+  const duesArrears = await prisma.obligation.create({
+    data: {
+      memberId: ama.id,
+      obligationTypeId: types.DUES.id,
+      periodStart: new Date("2026-10-01T00:00:00.000Z"),
+      expectedAmount: 50,
+      notes: "Seed: dues arrears",
+    },
+  });
+
+  const batch = await prisma.collectionBatch.create({
+    data: {
+      batchDate: saturday,
+      label: "Saturday collection (seed demo)",
+      countedTotal: 320,
+      systemTotal: 0,
+      varianceAmount: 0,
+      hasVariance: false,
+      notes: "Seed Saturday batch for tithe + thanksgiving + dues",
+    },
+  });
+
+  await prisma.payment.createMany({
+    data: [
+      {
+        obligationId: tithe.id,
+        batchId: batch.id,
+        amount: 150,
+        paidAt: saturday,
+        method: "Cash",
+      },
+      {
+        obligationId: thanksgiving.id,
+        batchId: batch.id,
+        amount: 100,
+        paidAt: saturday,
+        method: "Cash",
+      },
+      {
+        obligationId: duesPaid.id,
+        batchId: batch.id,
+        amount: 50,
+        paidAt: saturday,
+        method: "Cash",
+      },
+    ],
+  });
+
+  // counted 320 vs system 300 → variance flagged
+  await prisma.collectionBatch.update({
+    where: { id: batch.id },
+    data: {
+      systemTotal: 300,
+      varianceAmount: 20,
+      hasVariance: true,
+    },
+  });
+
+  // Keep duesArrears with zero payments for arrears query
+  void duesArrears;
+
   await prisma.auditLog.create({
     data: {
       action: "system.seed",
       entityType: "System",
       metadata: {
-        message: "Phase A platform seed completed",
+        message: "Phase A platform + finance seed completed",
         hqBranchId: hq.id,
+        financeDemoMembers: financeMembers.map((m) => m.memberNumber),
       },
     },
   });
@@ -161,6 +405,7 @@ async function main() {
   for (const u of demoUsers) {
     console.log(`  - ${u.email} (${u.role})`);
   }
+  console.log("Finance demo members: FIN-001, FIN-002, FIN-003");
 }
 
 main()
