@@ -2,15 +2,16 @@
 
 Church Database Management System for **Living Testimonies for Jesus Bible Ministry (LTJBM)**.
 
-Phase A foundation:
+Phase A/B foundation:
 
 - Next.js App Router + TypeScript + Tailwind
-- PostgreSQL + Prisma schema (org, members, finance, auth, audit, reporting config)
+- PostgreSQL + Prisma schema (org, members, finance, auth, audit, reporting config, domains)
 - Auth.js (NextAuth v5) credential sessions with roles
-- Middleware / route guards: HQ-only finance; RecordsClerk denied finance
+- Middleware / route guards: HQ-only finance; Admin-only `/admin`; RecordsClerk denied finance
 - Audit log plumbing (`writeAuditLog`)
 - Docker Compose for local Postgres
 - **Members / Biodata:** register/update, household, cells & fellowships, photo upload, deterministic duplicates, status history, Ghana→international transfer, individual/group print, ≥100 seeded members
+- **Admin / Migration:** domains/dropdowns/subdomains, user/role admin, member CSV/JSON export, logical backup snapshot + `docs/backup-restore.md`
 
 ## Roles
 
@@ -75,6 +76,8 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 2. Sign in as `finance@ltjbm.local` → `/finance` loads; `GET /api/finance/health` returns `{ ok: true }`
 3. Sign in as `clerk@ltjbm.local` → `/members` full register/update/transfer/print
 4. Sign in as `branch@ltjbm.local` → `/members` scoped to East Legon only
+5. Sign in as `admin@ltjbm.local` → `/admin` domains/users/export/backup; clerk hitting `/admin` → forbidden
+6. Admin: download `/api/admin/export/members?format=csv` and logical backup snapshot
 
 ## Useful scripts
 
@@ -99,8 +102,12 @@ src/lib/roles.ts              Role matrix helpers
 src/lib/audit.ts              Audit log writer
 src/lib/auth-guards.ts        Server/API guards
 src/lib/members/              Biodata access, duplicates, photos, actions
+src/lib/admin/                Domains, users, export, logical backup helpers
 src/app/members/              Clerk/Branch member UI + print
+src/app/admin/                Admin / Data Centre console
 src/app/api/finance/          HQ finance API gate (+ health smoke)
+src/app/api/admin/            Member export + backup snapshot (Admin-only)
+docs/backup-restore.md        Section 8 restore narrative (pg_dump/restore)
 docker-compose.yml            Local Postgres 16
 public/uploads/members/       Local photo storage (demo)
 ```
@@ -111,5 +118,5 @@ public/uploads/members/       Local photo storage (demo)
 - **Members / Biodata** — member CRUD, household, photos, duplicates, transfers, print, seed biodata
 - **Finance** — obligations, payments, Saturday batch, arrears
 - **Reporting** — Board rollups, schedules, template edit
-- **Admin / Migration** — domains, user admin, export/backup
+- **Admin / Migration** — domains, user admin, export/backup narrative (import = Phase C)
 - **QA / Demo** — Section 8 script and seeded demo DB

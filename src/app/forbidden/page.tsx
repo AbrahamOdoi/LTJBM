@@ -7,6 +7,7 @@ export default async function ForbiddenPage({
 }) {
   const params = await searchParams;
   const financeDenied = params.reason === "finance";
+  const adminDenied = params.reason === "admin";
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-6">
@@ -18,7 +19,9 @@ export default async function ForbiddenPage({
         <p className="text-slate-600 mb-6 leading-relaxed">
           {financeDenied
             ? "HQ finance is restricted. Records Clerks and other unauthorised roles cannot open finance routes or APIs."
-            : "You do not have permission to view this page."}
+            : adminDenied
+              ? "Admin / Data Centre console is restricted to Admin users."
+              : "You do not have permission to view this page."}
         </p>
         <Link
           href="/"
