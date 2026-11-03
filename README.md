@@ -2,16 +2,15 @@
 
 Church Database Management System for **Living Testimonies for Jesus Bible Ministry (LTJBM)**.
 
-Phase A platform foundation (Platform / Auth workstream):
+Phase A foundation:
 
 - Next.js App Router + TypeScript + Tailwind
-- PostgreSQL + Prisma schema skeleton (org, members, finance, auth, audit, reporting config)
+- PostgreSQL + Prisma schema (org, members, finance, auth, audit, reporting config)
 - Auth.js (NextAuth v5) credential sessions with roles
 - Middleware / route guards: HQ-only finance; RecordsClerk denied finance
 - Audit log plumbing (`writeAuditLog`)
 - Docker Compose for local Postgres
-
-Members, Finance, and Reporting UIs are owned by other workstreams.
+- **Members / Biodata:** register/update, household, cells & fellowships, photo upload, deterministic duplicates, status history, Ghana→international transfer, individual/group print, ≥100 seeded members
 
 ## Roles
 
@@ -74,6 +73,8 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 
 1. Sign in as `clerk@ltjbm.local` → open `/finance` → redirected to `/forbidden?reason=finance`
 2. Sign in as `finance@ltjbm.local` → `/finance` loads; `GET /api/finance/health` returns `{ ok: true }`
+3. Sign in as `clerk@ltjbm.local` → `/members` full register/update/transfer/print
+4. Sign in as `branch@ltjbm.local` → `/members` scoped to East Legon only
 
 ## Useful scripts
 
@@ -90,21 +91,24 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 
 ```
 prisma/schema.prisma          Domain + auth/audit skeleton
-prisma/seed.ts                Demo users, branches, obligation types
+prisma/seed.ts                Demo users, branches, ≥100 members biodata
 src/auth.ts                   Auth.js + Credentials provider
 src/auth.config.ts            Edge middleware + finance gate
 src/middleware.ts             NextAuth middleware entry
 src/lib/roles.ts              Role matrix helpers
 src/lib/audit.ts              Audit log writer
 src/lib/auth-guards.ts        Server/API guards
+src/lib/members/              Biodata access, duplicates, photos, actions
+src/app/members/              Clerk/Branch member UI + print
 src/app/api/finance/          HQ finance API gate (+ health smoke)
 docker-compose.yml            Local Postgres 16
+public/uploads/members/       Local photo storage (demo)
 ```
 
 ## Workstream boundaries
 
-- **Platform / Auth** — this bootstrap, RBAC, audit plumbing
-- **Members / Biodata** — member CRUD, household, photos, duplicates, transfers
+- **Platform / Auth** — bootstrap, RBAC, audit plumbing
+- **Members / Biodata** — member CRUD, household, photos, duplicates, transfers, print, seed biodata
 - **Finance** — obligations, payments, Saturday batch, arrears
 - **Reporting** — Board rollups, schedules, template edit
 - **Admin / Migration** — domains, user admin, export/backup

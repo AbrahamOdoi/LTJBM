@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# local member photo uploads (demo object-storage stand-in)
+/public/uploads/members/*
+!/public/uploads/members/.gitkeep
+
 # debug
 npm-debug.log*
 yarn-debug.log*

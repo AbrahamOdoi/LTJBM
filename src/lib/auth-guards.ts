@@ -1,5 +1,11 @@
 import { auth } from "@/auth";
-import { canAccessFinance, canWriteFinance, type Role } from "@/lib/roles";
+import {
+  canAccessFinance,
+  canAccessMembers,
+  canWriteFinance,
+  canWriteMembers,
+  type Role,
+} from "@/lib/roles";
 
 export class AuthGuardError extends Error {
   status: number;
@@ -35,6 +41,25 @@ export async function requireFinanceWrite() {
   if (!canWriteFinance(session.user.role)) {
     throw new AuthGuardError(
       "Finance write denied. Aggregated Board/Council views are read-only.",
+      403,
+    );
+  }
+  return session;
+}
+
+export async function requireMembersAccess() {
+  const session = await requireSession();
+  if (!canAccessMembers(session.user.role)) {
+    throw new AuthGuardError("Members access denied.", 403);
+  }
+  return session;
+}
+
+export async function requireMembersWrite() {
+  const session = await requireMembersAccess();
+  if (!canWriteMembers(session.user.role)) {
+    throw new AuthGuardError(
+      "Members write denied. Board/Council roles are read-only for biodata.",
       403,
     );
   }

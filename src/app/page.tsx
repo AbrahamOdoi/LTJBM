@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { SignOutButton } from "@/components/sign-out-button";
-import { canAccessFinance } from "@/lib/roles";
+import { canAccessFinance, canAccessMembers, canWriteMembers } from "@/lib/roles";
 
 export default async function HomePage() {
   const session = await auth();
   const role = session?.user?.role;
   const financeOk = canAccessFinance(role);
+  const membersOk = canAccessMembers(role);
+  const membersWrite = canWriteMembers(role);
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#e2e8f0_100%)] text-slate-900">
@@ -17,12 +19,11 @@ export default async function HomePage() {
               LTJBM CDMS
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-              Platform shell
+              Church database
             </h1>
             <p className="mt-2 text-slate-600 text-sm leading-relaxed max-w-xl">
-              Phase A foundation: Auth.js sessions, Prisma schema skeleton,
-              HQ finance route guards, and audit log plumbing. Members /
-              Finance / Reporting UIs belong to other workstreams.
+              Phase A: platform auth plus Members / biodata flows for Records
+              Clerks and Branch Leaders. Finance remains HQ-gated.
             </p>
           </div>
           <SignOutButton />
@@ -57,6 +58,32 @@ export default async function HomePage() {
             Surfaces
           </h2>
           <ul className="space-y-2 text-sm">
+            {membersOk ? (
+              <li>
+                <Link
+                  href="/members"
+                  className="text-sky-800 hover:underline font-medium"
+                >
+                  /members
+                </Link>
+                <span className="text-slate-500">
+                  {" "}
+                  — member register
+                  {membersWrite ? ", update, transfer, print" : " (read)"}
+                </span>
+              </li>
+            ) : null}
+            {membersWrite ? (
+              <li>
+                <Link
+                  href="/members/new"
+                  className="text-sky-800 hover:underline font-medium"
+                >
+                  /members/new
+                </Link>
+                <span className="text-slate-500"> — register with duplicate checks</span>
+              </li>
+            ) : null}
             <li>
               <Link
                 href="/finance"
