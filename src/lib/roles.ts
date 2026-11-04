@@ -70,11 +70,31 @@ export function canWriteMembers(role: Role | string | undefined | null): boolean
   return (MEMBERS_WRITE_ROLES as readonly string[]).includes(role);
 }
 
+/**
+ * Admin / Data Centre console (domains, users, export, backup narrative).
+ * Brief: Church Administrator / Data Centre — full admin + user management.
+ */
+export const ADMIN_ACCESS_ROLES: readonly Role[] = [Role.Admin] as const;
+
+export function canAccessAdmin(role: Role | string | undefined | null): boolean {
+  if (!role) return false;
+  return (ADMIN_ACCESS_ROLES as readonly string[]).includes(role);
+}
+
 /** Path prefixes that are HQ finance surfaces (UI + API). */
 export const FINANCE_ROUTE_PREFIXES = ["/finance", "/api/finance"] as const;
 
+/** Path prefixes for Admin / Data Centre console (UI + API). */
+export const ADMIN_ROUTE_PREFIXES = ["/admin", "/api/admin"] as const;
+
 export function isFinancePath(pathname: string): boolean {
   return FINANCE_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+export function isAdminPath(pathname: string): boolean {
+  return ADMIN_ROUTE_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }

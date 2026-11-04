@@ -1,5 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
-import { canAccessFinance, isFinancePath } from "@/lib/roles";
+import {
+  canAccessAdmin,
+  canAccessFinance,
+  isAdminPath,
+  isFinancePath,
+} from "@/lib/roles";
 
 /**
  * Edge-safe Auth.js config (no Node-only providers / Prisma).
@@ -43,6 +48,21 @@ export const authConfig = {
         }
         return Response.redirect(
           new URL("/forbidden?reason=finance", request.nextUrl),
+        );
+      }
+
+      if (isAdminPath(pathname) && !canAccessAdmin(auth.user.role)) {
+        if (pathname.startsWith("/api/")) {
+          return Response.json(
+            {
+              error:
+                "Admin / Data Centre access denied. Only Admin may open admin routes or APIs.",
+            },
+            { status: 403 },
+          );
+        }
+        return Response.redirect(
+          new URL("/forbidden?reason=admin", request.nextUrl),
         );
       }
 

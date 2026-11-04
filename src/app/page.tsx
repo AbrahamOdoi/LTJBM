@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { SignOutButton } from "@/components/sign-out-button";
-import { canAccessFinance, canAccessMembers, canWriteMembers } from "@/lib/roles";
+import {
+  canAccessAdmin,
+  canAccessFinance,
+  canAccessMembers,
+  canWriteMembers,
+} from "@/lib/roles";
 
 export default async function HomePage() {
   const session = await auth();
@@ -9,6 +14,7 @@ export default async function HomePage() {
   const financeOk = canAccessFinance(role);
   const membersOk = canAccessMembers(role);
   const membersWrite = canWriteMembers(role);
+  const adminOk = canAccessAdmin(role);
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#e2e8f0_100%)] text-slate-900">
@@ -22,8 +28,9 @@ export default async function HomePage() {
               Church database
             </h1>
             <p className="mt-2 text-slate-600 text-sm leading-relaxed max-w-xl">
-              Phase A: platform auth plus Members / biodata flows for Records
-              Clerks and Branch Leaders. Finance remains HQ-gated.
+              Phase A/B: platform auth, Members biodata, and Admin / Data Centre
+              console (domains, users, export, backup narrative). Finance remains
+              HQ-gated.
             </p>
           </div>
           <SignOutButton />
@@ -96,6 +103,20 @@ export default async function HomePage() {
                 — HQ finance shell (blocked for RecordsClerk)
               </span>
             </li>
+            {adminOk ? (
+              <li>
+                <Link
+                  href="/admin"
+                  className="text-sky-800 hover:underline font-medium"
+                >
+                  /admin
+                </Link>
+                <span className="text-slate-500">
+                  {" "}
+                  — domains, users, export, backup
+                </span>
+              </li>
+            ) : null}
             <li>
               <span className="font-medium text-slate-800">/api/finance/health</span>
               <span className="text-slate-500">
