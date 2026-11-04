@@ -167,13 +167,16 @@ async function membershipSlice(user: SessionUserLike) {
 }
 
 async function financeSlice() {
-  const [rollup, batches, arrears, snapshot] = await Promise.all([
+  const [rollup, batchesPage, arrearsPage, snapshot] = await Promise.all([
     getBalanceRollup({}),
-    listCollectionBatches(),
-    listDuesArrears({}),
+    // Reporting aggregates need the full list; list* APIs are paginated (#17).
+    listCollectionBatches({ page: 1, pageSize: 10_000 }),
+    listDuesArrears({ page: 1, pageSize: 10_000 }),
     getDashboardSnapshot(),
   ]);
 
+  const batches = batchesPage.items;
+  const arrears = arrearsPage.items;
   const openVariances = batches.filter((b) => b.hasVariance).length;
   const expected = toMoneyNumber(rollup.totals.expected);
   const paid = toMoneyNumber(rollup.totals.paid);
@@ -198,9 +201,9 @@ async function financeSlice() {
     {
       id: "arrears",
       label: "Dues arrears",
-      value: arrears.length,
+      value: arrearsPage.total,
       format: "count",
-      emphasize: arrears.length > 0 ? "warn" : "ok",
+      emphasize: arrearsPage.total > 0 ? "warn" : "ok",
     },
     {
       id: "batch-variance",

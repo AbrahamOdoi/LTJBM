@@ -295,10 +295,14 @@ async function runNewMembersPeriod(
 }
 
 async function runDuesArrears(filters: RunStandardFilters) {
-  const arrears = await listDuesArrears({
+  // Standard reports need the full arrears set; list APIs are paginated (#17).
+  const arrearsPage = await listDuesArrears({
     periodStart: filters.periodStart,
     periodEnd: filters.periodEnd,
+    page: 1,
+    pageSize: 10_000,
   });
+  const arrears = arrearsPage.items;
 
   return {
     columns: [
@@ -317,7 +321,7 @@ async function runDuesArrears(filters: RunStandardFilters) {
       paid: row.balances.paid,
       outstanding: row.balances.outstanding,
     })) satisfies ReportRow[],
-    summary: `${arrears.length} dues obligation(s) in arrears.`,
+    summary: `${arrearsPage.total} dues obligation(s) in arrears.`,
   };
 }
 
@@ -348,7 +352,11 @@ async function runContributionsSummary(filters: RunStandardFilters) {
 }
 
 async function runBatchVariance() {
-  const batches = await listCollectionBatches();
+  const batchesPage = await listCollectionBatches({
+    page: 1,
+    pageSize: 10_000,
+  });
+  const batches = batchesPage.items;
   return {
     columns: [
       { key: "date", label: "Batch date" },
@@ -366,7 +374,7 @@ async function runBatchVariance() {
       variance: b.varianceAmount,
       flag: b.hasVariance ? "Yes" : "No",
     })) satisfies ReportRow[],
-    summary: `${batches.filter((b) => b.hasVariance).length} of ${batches.length} batch(es) with counted vs system variance.`,
+    summary: `${batches.filter((b) => b.hasVariance).length} of ${batchesPage.total} batch(es) with counted vs system variance.`,
   };
 }
 
