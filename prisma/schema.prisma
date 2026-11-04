@@ -1,0 +1,367 @@
+// LTJBM CDMS — Prisma schema skeleton (Phase A)
+// Platform / Auth owns bootstrap; Members / Finance / Reporting extend domain UIs.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth & access ───────────────────────────────────────────────────────────
+
+enum Role {
+  RecordsClerk
+  BranchLeader
+  FinancialSecretary
+  PastoralBoard
+  LeadershipCouncil
+  Admin
+}
+
+model User {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  name         String
+  passwordHash String
+  role         Role
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  branchScopes UserBranchScope[]
+  auditLogs    AuditLog[]        @relation("AuditActor")
+  statusChanges MemberStatusHistory[] @relation("StatusChangedBy")
+}
+
+/// Branch / unit scope for Branch Leaders (and similar limited roles).
+model UserBranchScope {
+  id       String @id @default(cuid())
+  userId   String
+  branchId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, branchId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+}
+
+// ─── Org structure ───────────────────────────────────────────────────────────
+
+model Branch {
+  id           String            @id @default(cuid())
+  name         String
+  code         String            @unique
+  country      String
+  isHq         Boolean           @default(false)
+  isInternational Boolean        @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  cells        Cell[]
+  members      Member[]
+  userScopes   UserBranchScope[]
+  statusFrom   MemberStatusHistory[] @relation("TransferFrom")
+  statusTo     MemberStatusHistory[] @relation("TransferTo")
+}
+
+model Cell {
+  id         String            @id @default(cuid())
+  name       String
+  branchId   String
+  branch     Branch            @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  memberships GroupMembership[]
+
+  @@unique([branchId, name])
+}
+
+model FellowshipMinistry {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  code        String            @unique
+  description String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  memberships GroupMembership[]
+  obligations Obligation[]
+}
+
+enum GroupKind {
+  Cell
+  Fellowship
+}
+
+model GroupMembership {
+  id                   String              @id @default(cuid())
+  memberId             String
+  kind                 GroupKind
+  cellId               String?
+  fellowshipMinistryId String?
+  startedAt            DateTime            @default(now())
+  endedAt              DateTime?
+  member               Member              @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  cell                 Cell?               @relation(fields: [cellId], references: [id], onDelete: SetNull)
+  fellowshipMinistry   FellowshipMinistry? @relation(fields: [fellowshipMinistryId], references: [id], onDelete: SetNull)
+
+  @@index([memberId])
+  @@index([cellId])
+  @@index([fellowshipMinistryId])
+}
+
+// ─── People ──────────────────────────────────────────────────────────────────
+
+enum MemberStatus {
+  Active
+  Inactive
+  Transferred
+  Deceased
+  Suspended
+}
+
+model Member {
+  id           String                @id @default(cuid())
+  memberNumber String?               @unique
+  firstName    String
+  lastName     String
+  otherNames   String?
+  dateOfBirth  DateTime?
+  gender       String?
+  phone        String?
+  email        String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  region       String?
+  country      String?
+  photoKey     String?
+  status       MemberStatus          @default(Active)
+  branchId     String
+  branch       Branch                @relation(fields: [branchId], references: [id])
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  households   HouseholdMember[]
+  groups       GroupMembership[]
+  statusHistory MemberStatusHistory[]
+  obligations  Obligation[]
+  duplicateAsA DuplicateCandidate[]  @relation("DuplicateA")
+  duplicateAsB DuplicateCandidate[]  @relation("DuplicateB")
+
+  @@index([lastName, firstName])
+  @@index([phone])
+  @@index([branchId])
+  @@index([dateOfBirth])
+}
+
+model Household {
+  id        String            @id @default(cuid())
+  name      String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  members   HouseholdMember[]
+}
+
+enum HouseholdRelation {
+  Head
+  Spouse
+  Child
+  Dependent
+  Other
+}
+
+model HouseholdMember {
+  id          String             @id @default(cuid())
+  householdId String
+  memberId    String
+  relation    HouseholdRelation  @default(Other)
+  household   Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member      Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, memberId])
+}
+
+model MemberStatusHistory {
+  id            String        @id @default(cuid())
+  memberId      String
+  fromStatus    MemberStatus?
+  toStatus      MemberStatus
+  fromBranchId  String?
+  toBranchId    String?
+  reason        String?
+  changedById   String?
+  createdAt     DateTime      @default(now())
+  member        Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  fromBranch    Branch?       @relation("TransferFrom", fields: [fromBranchId], references: [id], onDelete: SetNull)
+  toBranch      Branch?       @relation("TransferTo", fields: [toBranchId], references: [id], onDelete: SetNull)
+  changedBy     User?         @relation("StatusChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([memberId, createdAt])
+}
+
+enum DuplicateReviewStatus {
+  Pending
+  ConfirmedDuplicate
+  Dismissed
+}
+
+model DuplicateCandidate {
+  id         String                @id @default(cuid())
+  memberAId  String
+  memberBId  String
+  score      Float
+  reasons    String[]
+  status     DuplicateReviewStatus @default(Pending)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  memberA    Member                @relation("DuplicateA", fields: [memberAId], references: [id], onDelete: Cascade)
+  memberB    Member                @relation("DuplicateB", fields: [memberBId], references: [id], onDelete: Cascade)
+
+  @@unique([memberAId, memberBId])
+  @@index([status])
+}
+
+// ─── Finance (HQ-only; route/API gated) ──────────────────────────────────────
+
+enum ObligationKind {
+  Pledge
+  Tithe
+  Dues
+  SpecialProject
+  Thanksgiving
+}
+
+model ObligationType {
+  id          String         @id @default(cuid())
+  kind        ObligationKind
+  name        String
+  code        String         @unique
+  description String?
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  obligations Obligation[]
+}
+
+model Obligation {
+  id                   String              @id @default(cuid())
+  memberId             String
+  obligationTypeId     String
+  fellowshipMinistryId String?
+  periodStart          DateTime
+  periodEnd            DateTime?
+  expectedAmount       Decimal             @db.Decimal(12, 2)
+  currency             String              @default("GHS")
+  instalmentCount      Int?
+  projectTargetAmount  Decimal?            @db.Decimal(12, 2)
+  notes                String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  member               Member              @relation(fields: [memberId], references: [id])
+  obligationType       ObligationType      @relation(fields: [obligationTypeId], references: [id])
+  fellowshipMinistry   FellowshipMinistry? @relation(fields: [fellowshipMinistryId], references: [id], onDelete: SetNull)
+  payments             Payment[]
+
+  @@index([memberId])
+  @@index([obligationTypeId, periodStart])
+}
+
+model CollectionBatch {
+  id             String    @id @default(cuid())
+  batchDate      DateTime
+  label          String
+  countedTotal   Decimal   @db.Decimal(12, 2)
+  systemTotal    Decimal   @default(0) @db.Decimal(12, 2)
+  varianceAmount Decimal   @default(0) @db.Decimal(12, 2)
+  hasVariance    Boolean   @default(false)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  payments       Payment[]
+
+  @@index([batchDate])
+}
+
+model Payment {
+  id            String           @id @default(cuid())
+  obligationId  String
+  batchId       String?
+  amount        Decimal          @db.Decimal(12, 2)
+  paidAt        DateTime
+  method        String?
+  reference     String?
+  notes         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  obligation    Obligation       @relation(fields: [obligationId], references: [id])
+  batch         CollectionBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  @@index([obligationId])
+  @@index([batchId])
+  @@index([paidAt])
+}
+
+// ─── Reporting config (skeleton for Reporting workstream) ────────────────────
+
+model ReportTemplate {
+  id          String           @id @default(cuid())
+  name        String
+  description String?
+  layout      Json
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  schedules   ReportSchedule[]
+}
+
+model ReportSchedule {
+  id              String         @id @default(cuid())
+  reportTemplateId String
+  cronExpression  String
+  distributionList String[]
+  isActive        Boolean        @default(true)
+  lastRunAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  reportTemplate  ReportTemplate @relation(fields: [reportTemplateId], references: [id], onDelete: Cascade)
+}
+
+// ─── Admin domains / dropdowns (skeleton) ────────────────────────────────────
+
+model DomainList {
+  id          String            @id @default(cuid())
+  key         String            @unique
+  label       String
+  description String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  values      DomainListValue[]
+}
+
+model DomainListValue {
+  id           String     @id @default(cuid())
+  domainListId String
+  value        String
+  label        String
+  sortOrder    Int        @default(0)
+  isActive     Boolean    @default(true)
+  parentValue  String?
+  domainList   DomainList @relation(fields: [domainListId], references: [id], onDelete: Cascade)
+
+  @@unique([domainListId, value])
+}
