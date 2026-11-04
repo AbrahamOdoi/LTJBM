@@ -461,6 +461,184 @@ async function seedDomainLists() {
   console.log(`Seeded ${domains.length} admin domain lists.`);
 }
 
+async function seedGroupsHub(opts: {
+  hqId: string;
+  eastId: string;
+  actorId: string;
+  sampleMemberId: string;
+}) {
+  // Backfill hub rows for every Cell / FellowshipMinistry
+  const cells = await prisma.cell.findMany({ include: { ministryGroup: true } });
+  for (const cell of cells) {
+    if (cell.ministryGroup) continue;
+    await prisma.ministryGroup.create({
+      data: {
+        name: cell.name,
+        kind: "Cell",
+        branchId: cell.branchId,
+        cellId: cell.id,
+      },
+    });
+  }
+
+  const fellowships = await prisma.fellowshipMinistry.findMany({
+    include: { ministryGroup: true },
+  });
+  for (const f of fellowships) {
+    if (f.ministryGroup) continue;
+    const kind =
+      f.code === "YOUTH" || /youth/i.test(f.name) ? "Youth" : "Fellowship";
+    await prisma.ministryGroup.create({
+      data: {
+        name: f.name,
+        kind,
+        description: f.description,
+        fellowshipMinistryId: f.id,
+      },
+    });
+  }
+
+  // Choir + ushers as first-class kinds (not Cell/Fellowship)
+  let choir = await prisma.ministryGroup.findFirst({
+    where: { kind: "Choir", name: "HQ Mass Choir" },
+  });
+  if (!choir) {
+    choir = await prisma.ministryGroup.create({
+      data: {
+        name: "HQ Mass Choir",
+        kind: "Choir",
+        branchId: opts.hqId,
+        description: "Head Office mass choir — demo department.",
+      },
+    });
+  }
+
+  let ushers = await prisma.ministryGroup.findFirst({
+    where: { kind: "Usher", name: "East Legon Ushers" },
+  });
+  if (!ushers) {
+    ushers = await prisma.ministryGroup.create({
+      data: {
+        name: "East Legon Ushers",
+        kind: "Usher",
+        branchId: opts.eastId,
+        description: "Sunday service ushering team.",
+      },
+    });
+  }
+
+  // Copy open GroupMembership rows onto linked hub rosters
+  const linked = await prisma.ministryGroup.findMany({
+    where: {
+      OR: [
+        { cellId: { not: null } },
+        { fellowshipMinistryId: { not: null } },
+      ],
+    },
+  });
+  for (const g of linked) {
+    const memberships = await prisma.groupMembership.findMany({
+      where: {
+        endedAt: null,
+        OR: [
+          ...(g.cellId ? [{ kind: "Cell" as const, cellId: g.cellId }] : []),
+          ...(g.fellowshipMinistryId
+            ? [
+                {
+                  kind: "Fellowship" as const,
+                  fellowshipMinistryId: g.fellowshipMinistryId,
+                },
+              ]
+            : []),
+        ],
+      },
+      take: 40,
+    });
+    for (const m of memberships) {
+      const open = await prisma.groupRosterEntry.findFirst({
+        where: { groupId: g.id, memberId: m.memberId, endedAt: null },
+      });
+      if (!open) {
+        await prisma.groupRosterEntry.create({
+          data: {
+            groupId: g.id,
+            memberId: m.memberId,
+            startedAt: m.startedAt,
+          },
+        });
+      }
+    }
+  }
+
+  // Demo roster + leader + meeting + announcement on choir
+  const onChoir = await prisma.groupRosterEntry.findFirst({
+    where: {
+      groupId: choir.id,
+      memberId: opts.sampleMemberId,
+      endedAt: null,
+    },
+  });
+  if (!onChoir) {
+    await prisma.groupRosterEntry.create({
+      data: { groupId: choir.id, memberId: opts.sampleMemberId },
+    });
+  }
+
+  const choirLeader = await prisma.groupLeader.findFirst({
+    where: {
+      groupId: choir.id,
+      memberId: opts.sampleMemberId,
+      endedAt: null,
+    },
+  });
+  if (!choirLeader) {
+    await prisma.groupLeader.create({
+      data: {
+        groupId: choir.id,
+        memberId: opts.sampleMemberId,
+        title: "Choir director",
+      },
+    });
+  }
+
+  const meetingCount = await prisma.groupMeetingLog.count({
+    where: { groupId: choir.id },
+  });
+  if (meetingCount === 0) {
+    await prisma.groupMeetingLog.create({
+      data: {
+        groupId: choir.id,
+        heldAt: new Date(),
+        title: "Saturday rehearsal",
+        notes: "Demo meeting log — Phase E groups hub.",
+        attendanceCount: 18,
+        location: "HQ choir room",
+        recordedById: opts.actorId,
+      },
+    });
+  }
+
+  const announceCount = await prisma.groupAnnouncement.count({
+    where: { groupId: choir.id },
+  });
+  if (announceCount === 0) {
+    await prisma.groupAnnouncement.create({
+      data: {
+        groupId: choir.id,
+        title: "Rehearsal reminder",
+        body: "Please arrive by 4pm for Saturday rehearsal. Stub announcement — no live WhatsApp.",
+        channel: "Email",
+        outboxLogged: false,
+        createdById: opts.actorId,
+      },
+    });
+  }
+
+  console.log(
+    `Groups hub: ${await prisma.ministryGroup.count()} groups (choir/ushers + synced cells/fellowships).`,
+  );
+}
+
 async function main() {
   const passwordHash = await hash(SEED_PASSWORD, 12);
 
@@ -1013,13 +1191,21 @@ async function main() {
     });
   }
 
+  // Phase E — groups & ministries hub (cells/fellowships + choir/ushers)
+  await seedGroupsHub({
+    hqId: hq.id,
+    eastId: eastLegon.id,
+    actorId: clerk.id,
+    sampleMemberId: portalMember.id,
+  });
+
   await prisma.auditLog.create({
     data: {
       action: "system.seed",
       entityType: "System",
       metadata: {
         message:
-          "Platform + members + finance + reporting + admin + Phase D Must-next seed completed",
+          "Platform + members + finance + reporting + admin + Phase D + Phase E groups seed completed",
         hqBranchId: hq.id,
         financeDemoMembers: financeMembers.map((m) => m.memberNumber),
         boardTemplateId: boardTemplate.id,

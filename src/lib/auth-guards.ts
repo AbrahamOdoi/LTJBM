@@ -5,6 +5,7 @@ import {
   canAccessAttendance,
   canAccessEvents,
   canAccessFinance,
+  canAccessGroups,
   canAccessMembers,
   canAccessPastoral,
   canAccessReporting,
@@ -12,6 +13,7 @@ import {
   canWriteAttendance,
   canWriteEvents,
   canWriteFinance,
+  canWriteGroups,
   canWriteMembers,
   type Role,
 } from "@/lib/roles";
@@ -169,6 +171,25 @@ export async function requireEventsWrite() {
   const session = await requireEventsAccess();
   if (!canWriteEvents(session.user.role)) {
     throw new AuthGuardError("Events write denied.", 403);
+  }
+  return session;
+}
+
+export async function requireGroupsAccess() {
+  const session = await requireSession();
+  if (!canAccessGroups(session.user.role)) {
+    throw new AuthGuardError("Groups access denied.", 403);
+  }
+  return session;
+}
+
+export async function requireGroupsWrite() {
+  const session = await requireGroupsAccess();
+  if (!canWriteGroups(session.user.role)) {
+    throw new AuthGuardError(
+      "Groups write denied. Board/Council may view rosters and meeting logs only.",
+      403,
+    );
   }
   return session;
 }

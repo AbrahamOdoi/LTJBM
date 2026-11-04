@@ -5,12 +5,14 @@ import {
   canAccessAttendance,
   canAccessEvents,
   canAccessFinance,
+  canAccessGroups,
   canAccessPastoral,
   canAccessReporting,
   isAdminPath,
   isAttendancePath,
   isEventsPath,
   isFinancePath,
+  isGroupsPath,
   isPastoralPath,
   isPortalPath,
   isReportingPath,
@@ -165,6 +167,18 @@ export const authConfig = {
         }
         return Response.redirect(
           new URL("/forbidden?reason=events", request.nextUrl),
+        );
+      }
+
+      if (isGroupsPath(pathname) && !canAccessGroups(role)) {
+        if (pathname.startsWith("/api/")) {
+          return Response.json(
+            { error: "Groups access denied." },
+            { status: 403 },
+          );
+        }
+        return Response.redirect(
+          new URL("/forbidden?reason=groups", request.nextUrl),
         );
       }
 

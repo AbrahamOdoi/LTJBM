@@ -43,6 +43,8 @@ model User {
   followUpsCreated  VisitorFollowUp[] @relation("FollowUpCreator")
   pastoralNotes     PastoralCareNote[] @relation("PastoralAuthor")
   attendanceMarked  AttendanceRecord[] @relation("AttendanceMarker")
+  groupMeetingsLogged GroupMeetingLog[] @relation("GroupMeetingRecorder")
+  groupAnnouncements  GroupAnnouncement[] @relation("GroupAnnouncementAuthor")
 }
 
 /// Branch / unit scope for Branch Leaders (and similar limited roles).
@@ -90,6 +92,7 @@ model Branch {
   statusTo     MemberStatusHistory[] @relation("TransferTo")
   attendanceSessions AttendanceSession[]
   churchEvents ChurchEvent[]
+  ministryGroups MinistryGroup[]
 }
 
 model Cell {
@@ -101,6 +104,7 @@ model Cell {
   updatedAt  DateTime          @updatedAt
   memberships GroupMembership[]
   attendanceSessions AttendanceSession[]
+  ministryGroup MinistryGroup?
 
   @@unique([branchId, name])
 }
@@ -114,6 +118,7 @@ model FellowshipMinistry {
   updatedAt   DateTime          @updatedAt
   memberships GroupMembership[]
   obligations Obligation[]
+  ministryGroup MinistryGroup?
 }
 
 enum GroupKind {
@@ -186,6 +191,8 @@ model Member {
   attendance       AttendanceRecord[]
   pastoralNotes    PastoralCareNote[]
   portalUser       User?                 @relation("UserMemberLink")
+  groupLeadership  GroupLeader[]
+  groupRoster      GroupRosterEntry[]
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -618,6 +625,7 @@ enum MessageTemplateKind {
   Welcome
   Receipt
   BoardReport
+  GroupAnnounce
   Custom
 }
 
@@ -649,4 +657,107 @@ model MessageOutbox {
 
   @@index([createdAt])
   @@index([status])
+}
+
+// ─── Phase E — groups & ministries hub ───────────────────────────────────────
+
+/// First-class departments / cells / choirs / ushers (hub). Cells & fellowships
+/// remain for finance/attendance; MinistryGroup can link to those legacy rows.
+enum MinistryGroupKind {
+  Cell
+  Fellowship
+  Choir
+  Usher
+  Youth
+  Department
+  Other
+}
+
+model MinistryGroup {
+  id                   String            @id @default(cuid())
+  name                 String
+  kind                 MinistryGroupKind
+  description          String?
+  branchId             String?
+  isActive             Boolean           @default(true)
+  cellId               String?           @unique
+  fellowshipMinistryId String?           @unique
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  branch               Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  cell                 Cell?             @relation(fields: [cellId], references: [id], onDelete: SetNull)
+  fellowshipMinistry   FellowshipMinistry? @relation(fields: [fellowshipMinistryId], references: [id], onDelete: SetNull)
+  leaders              GroupLeader[]
+  roster               GroupRosterEntry[]
+  meetings             GroupMeetingLog[]
+  announcements        GroupAnnouncement[]
+
+  @@index([kind, isActive])
+  @@index([branchId, kind])
+}
+
+model GroupLeader {
+  id        String        @id @default(cuid())
+  groupId   String
+  memberId  String
+  title     String?
+  startedAt DateTime      @default(now())
+  endedAt   DateTime?
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  group     MinistryGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  member    Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, endedAt])
+  @@index([memberId])
+}
+
+model GroupRosterEntry {
+  id        String        @id @default(cuid())
+  groupId   String
+  memberId  String
+  roleNote  String?
+  startedAt DateTime      @default(now())
+  endedAt   DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  group     MinistryGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  member    Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, endedAt])
+  @@index([memberId])
+}
+
+model GroupMeetingLog {
+  id              String        @id @default(cuid())
+  groupId         String
+  heldAt          DateTime
+  title           String
+  notes           String?
+  attendanceCount Int?
+  location        String?
+  recordedById    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  group           MinistryGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  recordedBy      User?         @relation("GroupMeetingRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([groupId, heldAt])
+}
+
+model GroupAnnouncement {
+  id           String          @id @default(cuid())
+  groupId      String
+  title        String
+  body         String
+  channel      CommChannelKind @default(Email)
+  /// True when roster contacts were logged to MessageOutbox (stub — no live WhatsApp).
+  outboxLogged Boolean         @default(false)
+  createdById  String?
+  createdAt    DateTime        @default(now())
+  group        MinistryGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy    User?           @relation("GroupAnnouncementAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([groupId, createdAt])
 }
