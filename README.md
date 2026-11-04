@@ -145,9 +145,19 @@ src/app/api/admin/            Member export + backup snapshot (Admin-only)
 src/components/finance/       Finance forms
 src/components/reporting/     Dashboard live refresh, template editor
 docs/backup-restore.md        Section 8 restore narrative (pg_dump/restore)
+docs/demo-script.md           Section 8 Demo Day script
+docs/user-guides/             Role user guides (Admin, Finance, Branch, Data Centre)
 docker-compose.yml            Local Postgres 16
 public/uploads/members/       Local photo storage (demo)
 ```
+
+## Documentation
+
+| Doc | Purpose |
+| --- | --- |
+| [`docs/user-guides/`](docs/user-guides/) | Short guides: [Admin](docs/user-guides/admin.md), [Finance](docs/user-guides/finance.md), [Branch](docs/user-guides/branch.md), [Data Centre](docs/user-guides/data-centre.md) |
+| [`docs/demo-script.md`](docs/demo-script.md) | Section 8 ordered Demo Day walkthrough |
+| [`docs/backup-restore.md`](docs/backup-restore.md) | Export + `pg_dump` / `pg_restore` narrative |
 
 ## Workstream boundaries
 
@@ -157,3 +167,4 @@ public/uploads/members/       Local photo storage (demo)
 - **Reporting** — Board rollups, schedules, template edit (reads aggregates only)
 - **Admin / Migration** — domains, user admin, export/backup narrative (import = Phase C)
 - **QA / Demo** — Section 8 script and seeded demo DB
+- **Docs / Training** — role user guides + training outline (Phase B)
