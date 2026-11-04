@@ -1,5 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
-import { canAccessFinance, isFinancePath } from "@/lib/roles";
+import {
+  canAccessFinance,
+  canAccessReporting,
+  isFinancePath,
+  isReportingPath,
+} from "@/lib/roles";
 
 /**
  * Edge-safe Auth.js config (no Node-only providers / Prisma).
@@ -27,6 +32,15 @@ export const authConfig = {
         return true;
       }
 
+      // Demo cron helper: allow Bearer REPORT_CRON_SECRET without a browser session.
+      if (
+        pathname === "/api/reports/schedules/run" &&
+        request.method === "POST" &&
+        request.headers.get("authorization")?.startsWith("Bearer ")
+      ) {
+        return true;
+      }
+
       if (!isLoggedIn) {
         return false;
       }
@@ -43,6 +57,21 @@ export const authConfig = {
         }
         return Response.redirect(
           new URL("/forbidden?reason=finance", request.nextUrl),
+        );
+      }
+
+      if (isReportingPath(pathname) && !canAccessReporting(auth.user.role)) {
+        if (pathname.startsWith("/api/")) {
+          return Response.json(
+            {
+              error:
+                "Reporting access denied. Aggregated Board/Council views are role-gated.",
+            },
+            { status: 403 },
+          );
+        }
+        return Response.redirect(
+          new URL("/forbidden?reason=reporting", request.nextUrl),
         );
       }
 

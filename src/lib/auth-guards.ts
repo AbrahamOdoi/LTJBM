@@ -1,5 +1,11 @@
 import { auth } from "@/auth";
-import { canAccessFinance, canWriteFinance, type Role } from "@/lib/roles";
+import {
+  canAccessFinance,
+  canAccessReporting,
+  canEditReportTemplates,
+  canWriteFinance,
+  type Role,
+} from "@/lib/roles";
 
 export class AuthGuardError extends Error {
   status: number;
@@ -35,6 +41,28 @@ export async function requireFinanceWrite() {
   if (!canWriteFinance(session.user.role)) {
     throw new AuthGuardError(
       "Finance write denied. Aggregated Board/Council views are read-only.",
+      403,
+    );
+  }
+  return session;
+}
+
+export async function requireReportingAccess() {
+  const session = await requireSession();
+  if (!canAccessReporting(session.user.role)) {
+    throw new AuthGuardError(
+      "Reporting access denied. Aggregated Board/Council views are role-gated.",
+      403,
+    );
+  }
+  return session;
+}
+
+export async function requireReportTemplateEdit() {
+  const session = await requireSession();
+  if (!canEditReportTemplates(session.user.role)) {
+    throw new AuthGuardError(
+      "Report template edit denied. Admin / Data Centre only.",
       403,
     );
   }

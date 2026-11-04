@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { SignOutButton } from "@/components/sign-out-button";
-import { canAccessFinance } from "@/lib/roles";
+import { canAccessFinance, canAccessReporting } from "@/lib/roles";
 
 export default async function HomePage() {
   const session = await auth();
   const role = session?.user?.role;
   const financeOk = canAccessFinance(role);
+  const reportingOk = canAccessReporting(role);
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#e2e8f0_100%)] text-slate-900">
@@ -20,9 +21,8 @@ export default async function HomePage() {
               Platform shell
             </h1>
             <p className="mt-2 text-slate-600 text-sm leading-relaxed max-w-xl">
-              Phase A foundation: Auth.js sessions, Prisma schema skeleton,
-              HQ finance route guards, and audit log plumbing. Finance HQ
-              posting is live; Board dashboards remain Reporting-owned.
+              Auth.js sessions, HQ finance posting, and Board/Council reporting
+              dashboards that read live Expected / Paid / Outstanding aggregates.
             </p>
           </div>
           <SignOutButton />
@@ -49,6 +49,12 @@ export default async function HomePage() {
               <dt className="text-slate-500">Finance access</dt>
               <dd className="font-medium">{financeOk ? "Allowed" : "Denied"}</dd>
             </div>
+            <div>
+              <dt className="text-slate-500">Reporting access</dt>
+              <dd className="font-medium">
+                {reportingOk ? "Allowed" : "Denied"}
+              </dd>
+            </div>
           </dl>
         </section>
 
@@ -67,6 +73,18 @@ export default async function HomePage() {
               <span className="text-slate-500">
                 {" "}
                 — HQ finance (obligations, batches, arrears)
+              </span>
+            </li>
+            <li>
+              <Link
+                href="/reports"
+                className="text-sky-800 hover:underline font-medium"
+              >
+                /reports
+              </Link>
+              <span className="text-slate-500">
+                {" "}
+                — Board / Council Expected · Paid · Outstanding
               </span>
             </li>
             <li>
