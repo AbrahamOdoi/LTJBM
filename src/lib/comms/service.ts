@@ -81,6 +81,13 @@ export async function ensureDefaultTemplates() {
       body: "Dear {{firstName}}, we received GH₵{{amount}} on {{paidAt}} ({{kind}}). Thank you for your faithfulness.",
       channel: "Email",
     },
+    {
+      kind: "GroupAnnounce",
+      name: "Group announcement",
+      subject: "Message from your LTJBM group",
+      body: "{{body}}",
+      channel: "Email",
+    },
   ];
 
   const existing = await prisma.messageTemplate.count();

@@ -302,6 +302,46 @@ export function canAccessCommsAdmin(
   return role === Role.Admin;
 }
 
+/**
+ * Groups & ministries hub — departments, cells, choirs, ushers, rosters,
+ * leaders, meeting logs, and stub group announcements (no branch finance).
+ */
+export const GROUPS_ACCESS_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+  Role.PastoralBoard,
+  Role.LeadershipCouncil,
+] as const;
+
+export const GROUPS_WRITE_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+] as const;
+
+export const GROUPS_ROUTE_PREFIXES = ["/groups", "/api/groups"] as const;
+
+export function canAccessGroups(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (GROUPS_ACCESS_ROLES as readonly string[]).includes(role);
+}
+
+export function canWriteGroups(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (GROUPS_WRITE_ROLES as readonly string[]).includes(role);
+}
+
+export function isGroupsPath(pathname: string): boolean {
+  return GROUPS_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 export type DashboardProfile =
   | "membership"
   | "finance"

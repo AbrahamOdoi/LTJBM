@@ -5,10 +5,12 @@ import {
   canAccessEvents,
   canAccessFinance,
   canAccessFinanceAggregateReports,
+  canAccessGroups,
   canAccessMembers,
   canAccessPastoral,
   canAccessReporting,
   canWriteFinance,
+  canWriteGroups,
   canWriteMembers,
   canEditReportTemplates,
   dashboardProfileForRole,
@@ -41,6 +43,7 @@ export type NavSurface =
   | "attendance"
   | "pastoral"
   | "events"
+  | "groups"
   | "portal";
 
 export type RoleNavItem = {
@@ -94,6 +97,17 @@ export function roleNavItems(
       label: "Attendance",
       surface: "attendance",
       description: "Manual service and cell check-in",
+    });
+  }
+
+  if (canAccessGroups(role)) {
+    items.push({
+      href: "/groups",
+      label: "Groups",
+      surface: "groups",
+      description: canWriteGroups(role)
+        ? "Departments, cells, choirs, rosters, and meeting logs"
+        : "Browse groups, rosters, and meeting logs",
     });
   }
 

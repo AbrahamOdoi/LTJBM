@@ -5,8 +5,10 @@ import {
   canAccessFinance,
   canAccessFinanceAggregateReports,
   canAccessFinanceDetailReports,
+  canAccessGroups,
   canAccessReporting,
   canWriteFinance,
+  canWriteGroups,
 } from "@/lib/roles";
 
 describe("RBAC individual-giving gate", () => {
@@ -35,5 +37,18 @@ describe("RBAC individual-giving gate", () => {
     assert.equal(canAccessFinanceAggregateReports(Role.PastoralBoard), true);
     assert.equal(canAccessFinanceDetailReports(Role.PastoralBoard), false);
     assert.equal(canAccessFinanceDetailReports(Role.FinancialSecretary), true);
+  });
+
+  it("opens Groups hub for Clerk/Branch/Admin/Board; write for Clerk/Branch/Admin only", () => {
+    assert.equal(canAccessGroups(Role.RecordsClerk), true);
+    assert.equal(canAccessGroups(Role.BranchLeader), true);
+    assert.equal(canAccessGroups(Role.Admin), true);
+    assert.equal(canAccessGroups(Role.PastoralBoard), true);
+    assert.equal(canAccessGroups(Role.LeadershipCouncil), true);
+    assert.equal(canAccessGroups(Role.FinancialSecretary), false);
+    assert.equal(canAccessGroups(Role.Member), false);
+    assert.equal(canWriteGroups(Role.RecordsClerk), true);
+    assert.equal(canWriteGroups(Role.PastoralBoard), false);
+    assert.equal(canWriteGroups(Role.LeadershipCouncil), false);
   });
 });
