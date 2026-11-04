@@ -50,21 +50,21 @@ export default async function MembersListPage({
   return (
     <MembersAppShell
       title="Member register"
-      subtitle="Biodata only — no finance. Branch Leaders see their assigned unit."
+      subtitle="Member records across branches, cells, and fellowship ministries. Contributions are Head Office only."
       role={session.user.role}
       userName={session.user.name}
     >
-      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white/90 p-4 sm:grid-cols-5 print:hidden">
+      <form className="lt-panel grid gap-3 p-4 sm:grid-cols-5 print:hidden">
         <input
           name="q"
           defaultValue={sp.q ?? ""}
-          placeholder="Search name, phone, number…"
-          className="sm:col-span-2 rounded-md border border-slate-300 px-3 py-2 text-sm"
+          placeholder="Search name, phone, member number…"
+          className="lt-input sm:col-span-2"
         />
         <select
           name="branchId"
           defaultValue={sp.branchId ?? ""}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+          className="lt-input"
         >
           <option value="">All branches</option>
           {branches.map((b) => (
@@ -76,7 +76,7 @@ export default async function MembersListPage({
         <select
           name="status"
           defaultValue={sp.status ?? ""}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+          className="lt-input"
         >
           <option value="">All statuses</option>
           {["Active", "Inactive", "Transferred", "Deceased", "Suspended"].map(
@@ -87,16 +87,13 @@ export default async function MembersListPage({
             ),
           )}
         </select>
-        <button
-          type="submit"
-          className="rounded-md bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-600"
-        >
+        <button type="submit" className="lt-btn-primary">
           Filter
         </button>
         <select
           name="cellId"
           defaultValue={sp.cellId ?? ""}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm sm:col-span-2"
+          className="lt-input sm:col-span-2"
         >
           <option value="">All cells</option>
           {cells.map((c) => (
@@ -108,9 +105,9 @@ export default async function MembersListPage({
         <select
           name="fellowshipId"
           defaultValue={sp.fellowshipId ?? ""}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm sm:col-span-2"
+          className="lt-input sm:col-span-2"
         >
-          <option value="">All fellowships</option>
+          <option value="">All fellowship ministries</option>
           {fellowships.map((f) => (
             <option key={f.id} value={f.id}>
               {f.name}
@@ -120,13 +117,12 @@ export default async function MembersListPage({
       </form>
 
       <div className="flex items-center justify-between gap-3 print:hidden">
-        <p className="text-sm text-slate-600">{listed.total} members</p>
+        <p className="text-sm text-[var(--lt-muted)]">
+          {listed.total} member{listed.total === 1 ? "" : "s"}
+        </p>
         <div className="flex gap-2">
           {writeOk ? (
-            <Link
-              href="/members/new"
-              className="rounded-md bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-600"
-            >
+            <Link href="/members/new" className="lt-btn-primary">
               Register member
             </Link>
           ) : null}
@@ -140,7 +136,7 @@ export default async function MembersListPage({
                 status: sp.status ?? "",
               }).filter(([, v]) => v),
             ).toString()}`}
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+            className="lt-btn-secondary"
           >
             Print group list
           </Link>
@@ -159,17 +155,17 @@ export default async function MembersListPage({
           actionLabel={writeOk ? "Register member" : undefined}
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white/90">
+        <div className="lt-table-wrap">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
+            <thead className="border-b border-[var(--lt-line)] bg-[#f3f7f5] text-[var(--lt-muted)]">
               <tr>
-                <th className="px-3 py-2 font-medium">Photo</th>
-                <th className="px-3 py-2 font-medium">Name</th>
-                <th className="px-3 py-2 font-medium">Number</th>
-                <th className="px-3 py-2 font-medium">Branch</th>
-                <th className="px-3 py-2 font-medium">Groups</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium print:hidden"> </th>
+                <th className="px-3 py-2.5 font-medium">Photo</th>
+                <th className="px-3 py-2.5 font-medium">Name</th>
+                <th className="px-3 py-2.5 font-medium">Number</th>
+                <th className="px-3 py-2.5 font-medium">Branch</th>
+                <th className="px-3 py-2.5 font-medium">Groups</th>
+                <th className="px-3 py-2.5 font-medium">Status</th>
+                <th className="px-3 py-2.5 font-medium print:hidden"> </th>
               </tr>
             </thead>
             <tbody>
@@ -180,7 +176,10 @@ export default async function MembersListPage({
                   .filter(Boolean)
                   .join(", ");
                 return (
-                  <tr key={m.id} className="border-b border-slate-100">
+                  <tr
+                    key={m.id}
+                    className="border-b border-[var(--lt-line)]/70 last:border-0"
+                  >
                     <td className="px-3 py-2">
                       {photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -190,28 +189,31 @@ export default async function MembersListPage({
                           className="h-10 w-10 rounded object-cover"
                         />
                       ) : (
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-xs text-slate-400">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded bg-[#e8efeB] text-xs text-[var(--lt-muted)]">
                           —
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 font-medium">
+                    <td className="px-3 py-2 font-medium text-[var(--lt-ink)]">
                       {m.lastName}, {m.firstName}
                     </td>
-                    <td className="px-3 py-2 text-slate-600">{m.memberNumber}</td>
+                    <td className="px-3 py-2 text-[var(--lt-muted)]">
+                      {m.memberNumber}
+                    </td>
                     <td className="px-3 py-2">
                       {m.branch.name}
                       {m.branch.isInternational ? (
-                        <span className="ml-1 text-xs text-slate-500">(intl)</span>
+                        <span className="ml-1 text-xs text-[var(--lt-muted)]">
+                          (intl)
+                        </span>
                       ) : null}
                     </td>
-                    <td className="px-3 py-2 text-slate-600">{groups || "—"}</td>
+                    <td className="px-3 py-2 text-[var(--lt-muted)]">
+                      {groups || "—"}
+                    </td>
                     <td className="px-3 py-2">{m.status}</td>
                     <td className="px-3 py-2 print:hidden">
-                      <Link
-                        href={`/members/${m.id}`}
-                        className="text-sky-800 hover:underline"
-                      >
+                      <Link href={`/members/${m.id}`} className="lt-link">
                         Open
                       </Link>
                     </td>

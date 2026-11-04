@@ -17,17 +17,17 @@ export function AppNav({ role, active, tone = "primary" }: Props) {
         const isActive = active === item.surface;
         const base =
           tone === "muted"
-            ? "rounded-md px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            : "rounded-md px-2.5 py-1.5 text-sky-950 hover:bg-sky-50";
+            ? "rounded-md px-2.5 py-1.5 text-[var(--lt-muted)] hover:bg-white/70 hover:text-[var(--lt-ink)]"
+            : "rounded-md px-2.5 py-1.5 text-[var(--lt-ink-soft)] hover:bg-white/80";
         const activeClass = isActive
-          ? "bg-slate-900 text-white hover:bg-slate-800 hover:text-white"
+          ? "bg-[var(--lt-ink)] text-white hover:bg-[var(--lt-ink-soft)] hover:text-white"
           : base;
 
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={activeClass}
+            className={`transition-colors duration-150 ${activeClass}`}
             aria-current={isActive ? "page" : undefined}
             title={item.description}
           >

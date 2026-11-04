@@ -16,7 +16,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   FinancialSecretary: "Financial Secretary",
   PastoralBoard: "Pastoral Board",
   LeadershipCouncil: "Leadership Council",
-  Admin: "Admin / Data Centre",
+  Admin: "Data Centre Admin",
 };
 
 export function roleLabel(role: Role | string | undefined | null): string {
@@ -42,6 +42,7 @@ export type RoleNavItem = {
 /**
  * Primary surfaces a signed-in role may open.
  * Home is always available; other links respect RBAC helpers.
+ * Labels use church-native language (Congregation, Tithes & Offerings, …).
  */
 export function roleNavItems(
   role: Role | string | undefined | null,
@@ -51,7 +52,7 @@ export function roleNavItems(
       href: "/",
       label: "Home",
       surface: "home",
-      description: "Your workspace and quick links",
+      description: "Your ministry workspace",
     },
   ];
 
@@ -61,39 +62,39 @@ export function roleNavItems(
       label: "Members",
       surface: "members",
       description: canWriteMembers(role)
-        ? "Register and update biodata"
-        : "Browse member biodata",
+        ? "Register and update member records"
+        : "Browse the member register",
     });
   }
 
   if (canAccessFinance(role)) {
     items.push({
       href: "/finance",
-      label: "Finance",
+      label: "Contributions",
       surface: "finance",
       description: canWriteFinance(role)
-        ? "Post obligations, payments, and batches"
-        : "View HQ financial totals (read-only)",
+        ? "Record pledges, tithes, dues, and Saturday collection batches"
+        : "View Head Office contribution totals (read-only)",
     });
   }
 
   if (canAccessReporting(role)) {
     items.push({
       href: "/reports",
-      label: "Reports",
+      label: "Board reports",
       surface: "reports",
       description: canEditReportTemplates(role)
         ? "Board dashboards, templates, and schedules"
-        : "Expected / Paid / Outstanding dashboards",
+        : "Expected / Paid / Outstanding",
     });
   }
 
   if (canAccessAdmin(role)) {
     items.push({
       href: "/admin",
-      label: "Admin",
+      label: "Data Centre",
       surface: "admin",
-      description: "Domains, users, export, and backup",
+      description: "Dropdown lists, users, export, and backup",
     });
   }
 
@@ -125,17 +126,21 @@ export function accessModeLabel(
   surface: "members" | "finance" | "reports" | "admin",
 ): string {
   if (surface === "members") {
-    return canWriteMembers(role) ? "Can edit biodata" : "Read-only biodata";
+    return canWriteMembers(role)
+      ? "May update member records"
+      : "Member register — read only";
   }
   if (surface === "finance") {
-    if (!canAccessFinance(role)) return "No finance access";
-    return canWriteFinance(role) ? "Can post & reconcile" : "Aggregates read-only";
+    if (!canAccessFinance(role)) return "No Contributions access";
+    return canWriteFinance(role)
+      ? "May post & reconcile contributions"
+      : "Contribution totals — read only";
   }
   if (surface === "reports") {
-    if (!canAccessReporting(role)) return "No reporting access";
+    if (!canAccessReporting(role)) return "No Board reports access";
     return canEditReportTemplates(role)
-      ? "Can edit templates & schedules"
-      : "Dashboards read-only";
+      ? "May edit templates & schedules"
+      : "Board dashboards — read only";
   }
-  return canAccessAdmin(role) ? "Full admin" : "No admin access";
+  return canAccessAdmin(role) ? "Full Data Centre access" : "No Data Centre access";
 }

@@ -10,16 +10,15 @@ type Props = {
 /** Consistent empty / zero-result panel for list surfaces. */
 export function EmptyState({ title, body, actionHref, actionLabel }: Props) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 px-5 py-10 text-center">
-      <h3 className="text-base font-medium text-slate-900">{title}</h3>
-      <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 leading-relaxed">
+    <div className="rounded-lg border border-dashed border-[var(--lt-line)] bg-white/70 px-5 py-10 text-center">
+      <h3 className="font-display text-lg font-medium text-[var(--lt-ink)]">
+        {title}
+      </h3>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[var(--lt-muted)]">
         {body}
       </p>
       {actionHref && actionLabel ? (
-        <Link
-          href={actionHref}
-          className="mt-4 inline-flex rounded-md bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-600"
-        >
+        <Link href={actionHref} className="lt-btn-primary mt-4">
           {actionLabel}
         </Link>
       ) : null}

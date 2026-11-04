@@ -9,11 +9,11 @@ export function MoneyCell({
 }) {
   const color =
     emphasize === "warn"
-      ? "text-amber-700"
+      ? "text-[var(--lt-warn)]"
       : emphasize === "ok"
-        ? "text-emerald-700"
+        ? "text-[var(--lt-ok)]"
         : emphasize === "muted"
-          ? "text-slate-500"
-          : "text-slate-900";
+          ? "text-[var(--lt-muted)]"
+          : "text-[var(--lt-ink)]";
   return <span className={`tabular-nums font-medium ${color}`}>{formatGhs(value)}</span>;
 }

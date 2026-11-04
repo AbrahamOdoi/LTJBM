@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { MoneyTile } from "@/components/reporting/money-tile";
 import { SimpleBarChart } from "@/components/reporting/simple-bar-chart";
 import { MoneyCell } from "@/components/finance/money-cell";
+import { obligationKindLabel } from "@/lib/church-labels";
 import type { ReportLayout } from "@/lib/reporting/template";
 
 type KindRow = {
@@ -98,43 +99,48 @@ export function DashboardLive({
     if (groupBy === "period") {
       return data.byPeriod.map((r) => ({ label: r.periodKey, value: r[metric] }));
     }
-    return data.byKind.map((r) => ({ label: r.kind, value: r[metric] }));
+    return data.byKind.map((r) => ({
+      label: obligationKindLabel(r.kind),
+      value: r[metric],
+    }));
   };
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">{layout.title}</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Live totals · last refresh{" "}
+          <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--lt-ink)]">
+            {layout.title}
+          </h2>
+          <p className="mt-1.5 text-sm text-[var(--lt-muted)]">
+            Live Expected / Paid / Outstanding · last refresh{" "}
             <time dateTime={data.generatedAt}>
               {new Date(data.generatedAt).toLocaleString()}
             </time>
             {pending ? " · refreshing…" : ""}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-[var(--lt-muted)]">
             {data.view === "board"
-              ? "Pastoral Board view"
+              ? "Pastoral Board view — aggregated totals only"
               : data.view === "council"
                 ? "Leadership Council view (includes branch & period)"
-                : "Full admin / finance view"}
+                : "Full Data Centre / Financial Secretary view"}
             {" · "}
-            figures update when payments are posted — no manual rebuild
+            figures update when contributions are posted — no manual rebuild
           </p>
         </div>
         <button
           type="button"
           onClick={refresh}
           disabled={pending}
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-50 disabled:opacity-60"
+          className="lt-btn-secondary disabled:opacity-60"
         >
           Refresh now
         </button>
       </div>
 
       {error ? (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <p className="rounded-md border border-[color-mix(in_srgb,var(--lt-warn)_40%,var(--lt-line))] bg-[color-mix(in_srgb,var(--lt-warn)_12%,white)] px-3 py-2 text-sm text-[var(--lt-ink)]">
           {error}
         </p>
       ) : null}
@@ -149,9 +155,9 @@ export function DashboardLive({
         />
       </section>
 
-      <section className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+      <section className="lt-table-wrap">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-left text-slate-600">
+          <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
             <tr>
               <th className="px-4 py-3 font-medium">Kind</th>
               <th className="px-4 py-3 font-medium">Obligations</th>
@@ -162,8 +168,10 @@ export function DashboardLive({
           </thead>
           <tbody>
             {data.byKind.map((row) => (
-              <tr key={row.kind} className="border-t border-slate-100">
-                <td className="px-4 py-3">{row.kind}</td>
+              <tr key={row.kind} className="border-t border-[var(--lt-line)]/70">
+                <td className="px-4 py-3 font-medium text-[var(--lt-ink)]">
+                  {obligationKindLabel(row.kind)}
+                </td>
                 <td className="px-4 py-3 tabular-nums">{row.obligationCount}</td>
                 <td className="px-4 py-3">
                   <MoneyCell value={row.expected} />
@@ -197,12 +205,12 @@ export function DashboardLive({
 
       {showBranch ? (
         <section className="space-y-2">
-          <h3 className="text-sm font-medium uppercase tracking-wide text-slate-500">
-            By branch (Council / Admin)
+          <h3 className="text-[0.7rem] font-medium uppercase tracking-[0.14em] text-[var(--lt-muted)]">
+            By branch (Leadership Council / Data Centre)
           </h3>
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <div className="lt-table-wrap">
             <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-left text-slate-600">
+              <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Branch</th>
                   <th className="px-4 py-3 font-medium">Expected</th>
@@ -212,10 +220,15 @@ export function DashboardLive({
               </thead>
               <tbody>
                 {data.byBranch.map((row) => (
-                  <tr key={row.branchId} className="border-t border-slate-100">
+                  <tr
+                    key={row.branchId}
+                    className="border-t border-[var(--lt-line)]/70"
+                  >
                     <td className="px-4 py-3">
                       {row.branchName}{" "}
-                      <span className="text-slate-400">({row.branchCode})</span>
+                      <span className="text-[var(--lt-muted)]">
+                        ({row.branchCode})
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <MoneyCell value={row.expected} />
@@ -239,12 +252,12 @@ export function DashboardLive({
 
       {showPeriod ? (
         <section className="space-y-2">
-          <h3 className="text-sm font-medium uppercase tracking-wide text-slate-500">
+          <h3 className="text-[0.7rem] font-medium uppercase tracking-[0.14em] text-[var(--lt-muted)]">
             By period start
           </h3>
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <div className="lt-table-wrap">
             <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-left text-slate-600">
+              <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Period</th>
                   <th className="px-4 py-3 font-medium">Expected</th>
@@ -254,7 +267,10 @@ export function DashboardLive({
               </thead>
               <tbody>
                 {data.byPeriod.map((row) => (
-                  <tr key={row.periodKey} className="border-t border-slate-100">
+                  <tr
+                    key={row.periodKey}
+                    className="border-t border-[var(--lt-line)]/70"
+                  >
                     <td className="px-4 py-3 tabular-nums">{row.periodKey}</td>
                     <td className="px-4 py-3">
                       <MoneyCell value={row.expected} />
@@ -276,9 +292,10 @@ export function DashboardLive({
         </section>
       ) : null}
 
-      <p className="text-xs text-slate-500">
-        Reporting shows aggregated Expected / Paid / Outstanding only. Individual
-        giving stays on Finance for authorised roles.
+      <p className="text-xs text-[var(--lt-muted)]">
+        Board reports show aggregated Expected / Paid / Outstanding only.
+        Individual contribution detail stays under Contributions for authorised
+        Head Office roles.
       </p>
     </div>
   );

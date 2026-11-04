@@ -10,19 +10,23 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#1e3a5f_0%,_#0f172a_55%,_#020617_100%)] text-slate-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-lg">
-        <p className="text-sm tracking-[0.2em] uppercase text-sky-300/80 mb-3">
-          LTJBM
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight mb-2">
-          Church Database Management System
-        </h1>
-        <p className="text-slate-300 mb-8 text-sm leading-relaxed">
-          Sign in with your assigned role. Use the demo role buttons below for
-          walkthroughs — Finance stays HQ-only and is blocked for Records
-          Clerks.
-        </p>
+    <main className="lt-login-canvas flex items-center justify-center p-6">
+      <div className="lt-enter w-full max-w-lg">
+        <div className="lt-brand-in mb-8">
+          <p className="text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[var(--lt-brass)]">
+            Living Testimonies for Jesus Bible Ministry
+          </p>
+          <h1 className="font-display mt-3 text-4xl font-semibold tracking-tight text-[#f2f7f4]">
+            LTJBM
+          </h1>
+          <p className="mt-1 font-display text-xl text-[#c5d9cf]">
+            Church membership &amp; contributions
+          </p>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-[#a8c0b4]">
+            Sign in to care for members, record Head Office contributions, or
+            review Board reports — according to your ministry role.
+          </p>
+        </div>
         <LoginForm />
       </div>
     </main>
