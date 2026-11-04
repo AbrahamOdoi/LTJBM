@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { withFinanceAccess } from "@/app/api/finance/_guard";
 import { auth } from "@/auth";
+import { canWriteFinance } from "@/lib/roles";
 
 /**
  * Smoke endpoint for RBAC: reachable only with finance-capable roles.
- * Finance workstream will replace with real obligation/payment APIs.
  */
 export async function GET() {
   return withFinanceAccess(async () => {
@@ -13,7 +13,16 @@ export async function GET() {
       ok: true,
       surface: "hq-finance",
       role: session?.user?.role,
-      message: "Finance API gate open for this role.",
+      canWrite: canWriteFinance(session?.user?.role),
+      endpoints: [
+        "/api/finance/obligation-types",
+        "/api/finance/members",
+        "/api/finance/obligations",
+        "/api/finance/payments",
+        "/api/finance/batches",
+        "/api/finance/arrears",
+        "/api/finance/balances",
+      ],
     });
   });
 }

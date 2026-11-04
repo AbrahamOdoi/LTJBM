@@ -11,7 +11,9 @@ Phase A platform foundation (Platform / Auth workstream):
 - Audit log plumbing (`writeAuditLog`)
 - Docker Compose for local Postgres
 
-Members, Finance, and Reporting UIs are owned by other workstreams.
+Finance Phase A (HQ) is implemented on this codebase: obligations, payments,
+Saturday batch variance, dues arrears, and Expected/Paid/Outstanding APIs.
+Board dashboards/templates remain Reporting-owned.
 
 ## Roles
 
@@ -74,6 +76,8 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 
 1. Sign in as `clerk@ltjbm.local` → open `/finance` → redirected to `/forbidden?reason=finance`
 2. Sign in as `finance@ltjbm.local` → `/finance` loads; `GET /api/finance/health` returns `{ ok: true }`
+3. Finance HQ screens: `/finance/obligations`, `/finance/batches`, `/finance/arrears`
+4. Reporting consume contract: `GET /api/finance/balances` (Expected / Paid / Outstanding by kind)
 
 ## Useful scripts
 
@@ -84,6 +88,7 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 | `npm run db:migrate` | Apply Prisma migrations |
 | `npm run db:seed` | Seed roles/org/demo users |
 | `npm run db:studio` | Prisma Studio |
+| `npm run test:finance` | Finance balance / batch variance unit tests |
 | `npx prisma generate` | Regenerate Prisma Client |
 
 ## Layout (key paths)
@@ -97,7 +102,10 @@ src/middleware.ts             NextAuth middleware entry
 src/lib/roles.ts              Role matrix helpers
 src/lib/audit.ts              Audit log writer
 src/lib/auth-guards.ts        Server/API guards
-src/app/api/finance/          HQ finance API gate (+ health smoke)
+src/lib/finance/              Balance math, batches, arrears, service
+src/app/finance/              HQ Financial Secretary / Admin UI
+src/app/api/finance/          HQ finance APIs (RBAC gated)
+src/components/finance/       Finance forms
 docker-compose.yml            Local Postgres 16
 ```
 

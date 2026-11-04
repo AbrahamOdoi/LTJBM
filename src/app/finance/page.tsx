@@ -1,46 +1,122 @@
 import { auth } from "@/auth";
-import Link from "next/link";
+import { MoneyCell } from "@/components/finance/money-cell";
+import { getBalanceRollup, listCollectionBatches } from "@/lib/finance/service";
 import { canWriteFinance } from "@/lib/roles";
+import Link from "next/link";
 
-/**
- * HQ finance shell only — Finance workstream owns real obligation/payment UI.
- * Middleware already blocks RecordsClerk and other non-finance roles.
- */
 export default async function FinancePage() {
   const session = await auth();
   const role = session?.user?.role;
+  const [rollup, batches] = await Promise.all([
+    getBalanceRollup({}),
+    listCollectionBatches(),
+  ]);
+  const openVariances = batches.filter((b) => b.hasVariance);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 p-8">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <div>
-          <p className="text-sm uppercase tracking-widest text-slate-500">
-            HQ only
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight">Finance</h1>
-          <p className="mt-2 text-slate-600">
-            Platform gate is live for role{" "}
-            <span className="font-medium text-slate-900">{role}</span>. Domain
-            screens (pledges, batches, arrears) will be added by the Finance
-            workstream.
-          </p>
-        </div>
-
-        <div className="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
-          <p className="text-sm text-slate-500">Access</p>
-          <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1">
-            <li>Read / aggregated view: allowed for this session</li>
-            <li>
-              Write / reconcile:{" "}
-              {canWriteFinance(role) ? "allowed" : "read-only for this role"}
-            </li>
-          </ul>
-        </div>
-
-        <Link href="/" className="text-sm text-sky-700 hover:underline">
-          ← Back to home
-        </Link>
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight">Overview</h2>
+        <p className="mt-1 text-slate-600">
+          HQ obligations and payments update Expected / Paid / Outstanding for
+          Reporting. Role{" "}
+          <span className="font-medium text-slate-900">{role}</span>
+          {canWriteFinance(role) ? " may post" : " is read-only"}.
+        </p>
       </div>
-    </main>
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        <SummaryTile label="Expected" value={rollup.totals.expected} />
+        <SummaryTile label="Paid" value={rollup.totals.paid} emphasize="ok" />
+        <SummaryTile
+          label="Outstanding"
+          value={rollup.totals.outstanding}
+          emphasize={rollup.totals.outstanding > 0 ? "warn" : "ok"}
+        />
+      </section>
+
+      <section className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <table className="min-w-full text-sm">
+          <thead className="bg-slate-50 text-left text-slate-600">
+            <tr>
+              <th className="px-4 py-3 font-medium">Kind</th>
+              <th className="px-4 py-3 font-medium">Obligations</th>
+              <th className="px-4 py-3 font-medium">Expected</th>
+              <th className="px-4 py-3 font-medium">Paid</th>
+              <th className="px-4 py-3 font-medium">Outstanding</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rollup.byKind.map((row) => (
+              <tr key={row.kind} className="border-t border-slate-100">
+                <td className="px-4 py-3">{row.kind}</td>
+                <td className="px-4 py-3 tabular-nums">{row.obligationCount}</td>
+                <td className="px-4 py-3">
+                  <MoneyCell value={row.expected} />
+                </td>
+                <td className="px-4 py-3">
+                  <MoneyCell value={row.paid} emphasize="ok" />
+                </td>
+                <td className="px-4 py-3">
+                  <MoneyCell
+                    value={row.outstanding}
+                    emphasize={row.outstanding > 0 ? "warn" : "muted"}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="flex flex-wrap gap-3">
+        <Link
+          href="/finance/obligations"
+          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        >
+          Manage obligations
+        </Link>
+        <Link
+          href="/finance/batches"
+          className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
+        >
+          Saturday batches
+          {openVariances.length > 0
+            ? ` (${openVariances.length} variance)`
+            : ""}
+        </Link>
+        <Link
+          href="/finance/arrears"
+          className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
+        >
+          Dues arrears
+        </Link>
+      </section>
+
+      <p className="text-xs text-slate-500">
+        Reporting contract:{" "}
+        <code className="rounded bg-slate-100 px-1">GET /api/finance/balances</code>{" "}
+        — Board dashboards/templates are owned by Reporting, not this surface.
+      </p>
+    </div>
+  );
+}
+
+function SummaryTile({
+  label,
+  value,
+  emphasize,
+}: {
+  label: string;
+  value: number;
+  emphasize?: "ok" | "warn";
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl">
+        <MoneyCell value={value} emphasize={emphasize} />
+      </p>
+    </div>
   );
 }

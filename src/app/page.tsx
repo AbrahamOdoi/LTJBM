@@ -21,8 +21,8 @@ export default async function HomePage() {
             </h1>
             <p className="mt-2 text-slate-600 text-sm leading-relaxed max-w-xl">
               Phase A foundation: Auth.js sessions, Prisma schema skeleton,
-              HQ finance route guards, and audit log plumbing. Members /
-              Finance / Reporting UIs belong to other workstreams.
+              HQ finance route guards, and audit log plumbing. Finance HQ
+              posting is live; Board dashboards remain Reporting-owned.
             </p>
           </div>
           <SignOutButton />
@@ -66,7 +66,7 @@ export default async function HomePage() {
               </Link>
               <span className="text-slate-500">
                 {" "}
-                — HQ finance shell (blocked for RecordsClerk)
+                — HQ finance (obligations, batches, arrears)
               </span>
             </li>
             <li>
