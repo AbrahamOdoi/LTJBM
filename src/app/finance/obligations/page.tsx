@@ -1,0 +1,160 @@
+import { auth } from "@/auth";
+import { CreateObligationForm } from "@/components/finance/create-obligation-form";
+import { MoneyCell } from "@/components/finance/money-cell";
+import { prisma } from "@/lib/db";
+import {
+  listFinanceMembers,
+  listObligationTypes,
+  listObligations,
+} from "@/lib/finance/service";
+import { canWriteFinance } from "@/lib/roles";
+import Link from "next/link";
+
+export default async function ObligationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ kind?: string }>;
+}) {
+  const session = await auth();
+  const canWrite = canWriteFinance(session?.user?.role);
+  const { kind } = await searchParams;
+
+  const [types, members, fellowships, obligations] = await Promise.all([
+    listObligationTypes(),
+    listFinanceMembers(),
+    prisma.fellowshipMinistry.findMany({ orderBy: { name: "asc" } }),
+    listObligations({
+      kind:
+        kind &&
+        ["Pledge", "Tithe", "Dues", "SpecialProject", "Thanksgiving"].includes(
+          kind,
+        )
+          ? (kind as
+              | "Pledge"
+              | "Tithe"
+              | "Dues"
+              | "SpecialProject"
+              | "Thanksgiving")
+          : undefined,
+    }),
+  ]);
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight">Obligations</h2>
+        <p className="mt-1 text-slate-600">
+          Pledge (instalments), Special Project (targets), Tithe, Dues,
+          Thanksgiving.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 text-sm">
+        <FilterChip href="/finance/obligations" label="All" active={!kind} />
+        {types.map((t) => (
+          <FilterChip
+            key={t.id}
+            href={`/finance/obligations?kind=${t.kind}`}
+            label={t.name}
+            active={kind === t.kind}
+          />
+        ))}
+      </div>
+
+      <CreateObligationForm
+        canWrite={canWrite}
+        types={types}
+        members={members.map((m) => ({
+          id: m.id,
+          name: `${m.firstName} ${m.lastName}`,
+          memberNumber: m.memberNumber,
+        }))}
+        fellowships={fellowships}
+      />
+
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <table className="min-w-full text-sm">
+          <thead className="bg-slate-50 text-left text-slate-600">
+            <tr>
+              <th className="px-4 py-3 font-medium">Member</th>
+              <th className="px-4 py-3 font-medium">Type</th>
+              <th className="px-4 py-3 font-medium">Period</th>
+              <th className="px-4 py-3 font-medium">Expected</th>
+              <th className="px-4 py-3 font-medium">Paid</th>
+              <th className="px-4 py-3 font-medium">Outstanding</th>
+            </tr>
+          </thead>
+          <tbody>
+            {obligations.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-slate-500">
+                  No obligations yet.
+                </td>
+              </tr>
+            )}
+            {obligations.map((ob) => (
+              <tr key={ob.id} className="border-t border-slate-100">
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/finance/obligations/${ob.id}`}
+                    className="font-medium text-sky-800 hover:underline"
+                  >
+                    {ob.member.name}
+                  </Link>
+                </td>
+                <td className="px-4 py-3">
+                  {ob.obligationType.name}
+                  {ob.instalmentCount
+                    ? ` · ${ob.instalmentCount} instalments`
+                    : ""}
+                  {ob.projectTargetAmount != null
+                    ? ` · target ${ob.projectTargetAmount}`
+                    : ""}
+                </td>
+                <td className="px-4 py-3 tabular-nums">
+                  {ob.periodStart.slice(0, 10)}
+                  {ob.periodEnd ? ` → ${ob.periodEnd.slice(0, 10)}` : ""}
+                </td>
+                <td className="px-4 py-3">
+                  <MoneyCell value={ob.balances.expected} />
+                </td>
+                <td className="px-4 py-3">
+                  <MoneyCell value={ob.balances.paid} emphasize="ok" />
+                </td>
+                <td className="px-4 py-3">
+                  <MoneyCell
+                    value={ob.balances.outstanding}
+                    emphasize={ob.balances.outstanding > 0 ? "warn" : "muted"}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function FilterChip({
+  href,
+  label,
+  active,
+}: {
+  href: string;
+  label: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`rounded-md px-3 py-1.5 ${
+        active
+          ? "bg-slate-900 text-white"
+          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
