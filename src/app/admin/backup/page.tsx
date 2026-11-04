@@ -50,14 +50,17 @@ export default async function AdminBackupPage() {
           <li>
             Take a backup:{" "}
             <code className="text-xs bg-slate-100 px-1 rounded">
-              docker compose exec -T postgres pg_dump -U cdms -d cdms -Fc &gt; backup.dump
-            </code>
+              npm run backup:db
+            </code>{" "}
+            (writes <code className="text-xs bg-slate-100 px-1 rounded">./backups/*.dump</code> via{" "}
+            <code className="text-xs bg-slate-100 px-1 rounded">scripts/backup-db.sh</code>).
           </li>
           <li>
             On a clean database, restore:{" "}
             <code className="text-xs bg-slate-100 px-1 rounded">
-              docker compose exec -T postgres pg_restore -U cdms -d cdms --clean --if-exists &lt; backup.dump
-            </code>
+              npm run restore:db -- backups/cdms-….dump
+            </code>{" "}
+            (<code className="text-xs bg-slate-100 px-1 rounded">scripts/restore-db.sh</code>).
           </li>
           <li>
             Re-attach the app with the same <code>DATABASE_URL</code>; confirm

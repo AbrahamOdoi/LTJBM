@@ -25,6 +25,10 @@
 *.pem
 /tmp/
 
+# local DB dumps (scripts/backup-db.sh)
+/backups/*
+!/backups/.gitkeep
+
 # local member photo uploads (demo object-storage stand-in)
 /public/uploads/members/*
 !/public/uploads/members/.gitkeep

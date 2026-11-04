@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:finance && npm run test:reporting",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
@@ -15,6 +17,8 @@
     "test:finance": "tsx --test src/lib/finance/*.test.ts",
     "test:reporting": "tsx --test src/lib/reporting/*.test.ts",
     "report:monthly": "tsx scripts/send-board-report.ts",
+    "backup:db": "bash scripts/backup-db.sh",
+    "restore:db": "bash scripts/restore-db.sh",
     "postinstall": "prisma generate"
   },
   "prisma": {
