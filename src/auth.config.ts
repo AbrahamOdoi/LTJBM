@@ -1,10 +1,18 @@
 import type { NextAuthConfig } from "next-auth";
 import {
+  Role,
   canAccessAdmin,
+  canAccessAttendance,
+  canAccessEvents,
   canAccessFinance,
+  canAccessPastoral,
   canAccessReporting,
   isAdminPath,
+  isAttendancePath,
+  isEventsPath,
   isFinancePath,
+  isPastoralPath,
+  isPortalPath,
   isReportingPath,
 } from "@/lib/roles";
 import { getConfiguredCronSecret } from "@/lib/security";
@@ -54,7 +62,32 @@ export const authConfig = {
         return false;
       }
 
-      if (isFinancePath(pathname) && !canAccessFinance(auth.user.role)) {
+      const role = auth.user.role;
+
+      // Member portal role: only /portal (+ home/login handled above).
+      if (role === Role.Member) {
+        if (
+          isPortalPath(pathname) ||
+          pathname === "/" ||
+          pathname === "/forbidden"
+        ) {
+          return true;
+        }
+        if (pathname.startsWith("/api/")) {
+          return Response.json(
+            { error: "Member portal accounts may only use /portal." },
+            { status: 403 },
+          );
+        }
+        return Response.redirect(new URL("/portal", request.nextUrl));
+      }
+
+      if (isPortalPath(pathname)) {
+        // Staff may open portal only when linked — page guards enforce memberId.
+        return true;
+      }
+
+      if (isFinancePath(pathname) && !canAccessFinance(role)) {
         if (pathname.startsWith("/api/")) {
           return Response.json(
             {
@@ -69,7 +102,7 @@ export const authConfig = {
         );
       }
 
-      if (isReportingPath(pathname) && !canAccessReporting(auth.user.role)) {
+      if (isReportingPath(pathname) && !canAccessReporting(role)) {
         if (pathname.startsWith("/api/")) {
           return Response.json(
             {
@@ -84,7 +117,7 @@ export const authConfig = {
         );
       }
 
-      if (isAdminPath(pathname) && !canAccessAdmin(auth.user.role)) {
+      if (isAdminPath(pathname) && !canAccessAdmin(role)) {
         if (pathname.startsWith("/api/")) {
           return Response.json(
             {
@@ -99,12 +132,51 @@ export const authConfig = {
         );
       }
 
+      if (isAttendancePath(pathname) && !canAccessAttendance(role)) {
+        if (pathname.startsWith("/api/")) {
+          return Response.json(
+            { error: "Attendance access denied." },
+            { status: 403 },
+          );
+        }
+        return Response.redirect(
+          new URL("/forbidden?reason=attendance", request.nextUrl),
+        );
+      }
+
+      if (isPastoralPath(pathname) && !canAccessPastoral(role)) {
+        if (pathname.startsWith("/api/")) {
+          return Response.json(
+            { error: "Pastoral care access denied (restricted)." },
+            { status: 403 },
+          );
+        }
+        return Response.redirect(
+          new URL("/forbidden?reason=pastoral", request.nextUrl),
+        );
+      }
+
+      if (isEventsPath(pathname) && !canAccessEvents(role)) {
+        if (pathname.startsWith("/api/")) {
+          return Response.json(
+            { error: "Events access denied." },
+            { status: 403 },
+          );
+        }
+        return Response.redirect(
+          new URL("/forbidden?reason=events", request.nextUrl),
+        );
+      }
+
       return true;
     },
     jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        if ("memberId" in user && typeof user.memberId === "string") {
+          token.memberId = user.memberId;
+        }
       }
       return token;
     },
@@ -112,6 +184,8 @@ export const authConfig = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as typeof session.user.role;
+        session.user.memberId =
+          typeof token.memberId === "string" ? token.memberId : null;
       }
       return session;
     },

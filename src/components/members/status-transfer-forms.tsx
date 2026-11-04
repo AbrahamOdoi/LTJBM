@@ -30,7 +30,14 @@ export function StatusChangeForm({
           <option value="" disabled>
             Select…
           </option>
-          {["Active", "Inactive", "Transferred", "Deceased", "Suspended"]
+          {[
+            "Active",
+            "Visitor",
+            "Inactive",
+            "Transferred",
+            "Deceased",
+            "Suspended",
+          ]
             .filter((s) => s !== currentStatus)
             .map((s) => (
               <option key={s} value={s}>

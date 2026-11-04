@@ -2,10 +2,15 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import {
   canAccessAdmin,
+  canAccessAttendance,
+  canAccessEvents,
   canAccessFinance,
   canAccessMembers,
+  canAccessPastoral,
   canAccessReporting,
   canEditReportTemplates,
+  canWriteAttendance,
+  canWriteEvents,
   canWriteFinance,
   canWriteMembers,
   type Role,
@@ -122,5 +127,68 @@ export async function requireAdmin() {
       403,
     );
   }
+  return session;
+}
+
+export async function requireAttendanceAccess() {
+  const session = await requireSession();
+  if (!canAccessAttendance(session.user.role)) {
+    throw new AuthGuardError("Attendance access denied.", 403);
+  }
+  return session;
+}
+
+export async function requireAttendanceWrite() {
+  const session = await requireAttendanceAccess();
+  if (!canWriteAttendance(session.user.role)) {
+    throw new AuthGuardError("Attendance write denied.", 403);
+  }
+  return session;
+}
+
+export async function requirePastoralAccess() {
+  const session = await requireSession();
+  if (!canAccessPastoral(session.user.role)) {
+    throw new AuthGuardError(
+      "Pastoral care access denied. Restricted to Pastoral Board, Branch Leaders, and Admin.",
+      403,
+    );
+  }
+  return session;
+}
+
+export async function requireEventsAccess() {
+  const session = await requireSession();
+  if (!canAccessEvents(session.user.role)) {
+    throw new AuthGuardError("Events access denied.", 403);
+  }
+  return session;
+}
+
+export async function requireEventsWrite() {
+  const session = await requireEventsAccess();
+  if (!canWriteEvents(session.user.role)) {
+    throw new AuthGuardError("Events write denied.", 403);
+  }
+  return session;
+}
+
+/**
+ * Member portal — requires a linked memberId on the user.
+ * Own profile + own giving statement only (never other members' finance).
+ */
+export async function requirePortalAccess() {
+  const session = await requireSession();
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { memberId: true, role: true },
+  });
+  if (!dbUser?.memberId) {
+    throw new AuthGuardError(
+      "Member portal requires a linked member record. Contact Data Centre.",
+      403,
+    );
+  }
+  session.user.memberId = dbUser.memberId;
   return session;
 }

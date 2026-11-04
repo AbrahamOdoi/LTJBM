@@ -1,14 +1,18 @@
 import {
   Role,
   canAccessAdmin,
+  canAccessAttendance,
+  canAccessEvents,
   canAccessFinance,
   canAccessFinanceAggregateReports,
   canAccessMembers,
+  canAccessPastoral,
   canAccessReporting,
   canWriteFinance,
   canWriteMembers,
   canEditReportTemplates,
   dashboardProfileForRole,
+  isMemberPortalRole,
 } from "@/lib/roles";
 
 /** Human-facing role names for demo and day-to-day UI (not Prisma enum strings). */
@@ -19,6 +23,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   PastoralBoard: "Pastoral Board",
   LeadershipCouncil: "Leadership Council",
   Admin: "Data Centre Admin",
+  Member: "Member (portal)",
 };
 
 export function roleLabel(role: Role | string | undefined | null): string {
@@ -32,7 +37,11 @@ export type NavSurface =
   | "members"
   | "finance"
   | "reports"
-  | "admin";
+  | "admin"
+  | "attendance"
+  | "pastoral"
+  | "events"
+  | "portal";
 
 export type RoleNavItem = {
   href: string;
@@ -58,6 +67,16 @@ export function roleNavItems(
     },
   ];
 
+  if (isMemberPortalRole(role)) {
+    items.push({
+      href: "/portal",
+      label: "My portal",
+      surface: "portal",
+      description: "Your profile and your contribution statement",
+    });
+    return items;
+  }
+
   if (canAccessMembers(role)) {
     items.push({
       href: "/members",
@@ -66,6 +85,33 @@ export function roleNavItems(
       description: canWriteMembers(role)
         ? "Register and update member records"
         : "Browse the member register",
+    });
+  }
+
+  if (canAccessAttendance(role)) {
+    items.push({
+      href: "/attendance",
+      label: "Attendance",
+      surface: "attendance",
+      description: "Manual service and cell check-in",
+    });
+  }
+
+  if (canAccessEvents(role)) {
+    items.push({
+      href: "/events",
+      label: "Events",
+      surface: "events",
+      description: "Church calendar and light registration",
+    });
+  }
+
+  if (canAccessPastoral(role)) {
+    items.push({
+      href: "/pastoral",
+      label: "Pastoral care",
+      surface: "pastoral",
+      description: "Prayer and visitation notes (restricted)",
     });
   }
 
@@ -113,6 +159,8 @@ export function defaultPathForRole(
   role: Role | string | undefined | null,
 ): string {
   switch (role) {
+    case Role.Member:
+      return "/portal";
     case Role.RecordsClerk:
     case Role.BranchLeader:
     case Role.FinancialSecretary:

@@ -33,11 +33,40 @@ export const memberBiodataSchema = z.object({
   householdName: z.preprocess(emptyToNull, z.string().trim().max(120).nullable()),
   householdRelation: z.enum(["Head", "Spouse", "Child", "Dependent", "Other"]).optional(),
   forceCreate: z.coerce.boolean().optional().default(false),
+  joinedAt: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date")
+      .nullable(),
+  ),
+  baptismDate: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date")
+      .nullable(),
+  ),
+  confirmationDate: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date")
+      .nullable(),
+  ),
+  registerAs: z.enum(["Active", "Visitor"]).optional().default("Active"),
 });
 
 export const memberStatusSchema = z.object({
   memberId: z.string().min(1),
-  toStatus: z.enum(["Active", "Inactive", "Transferred", "Deceased", "Suspended"]),
+  toStatus: z.enum([
+    "Active",
+    "Visitor",
+    "Inactive",
+    "Transferred",
+    "Deceased",
+    "Suspended",
+  ]),
   reason: z.preprocess(emptyToNull, z.string().trim().max(500).nullable()),
 });
 

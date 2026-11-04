@@ -51,4 +51,10 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     label: ROLE_LABELS.Admin,
     blurb: "Dropdown lists, users, export",
   },
+  {
+    email: "member@ltjbm.local",
+    role: "Member",
+    label: ROLE_LABELS.Member,
+    blurb: "Own profile + own statement only",
+  },
 ];

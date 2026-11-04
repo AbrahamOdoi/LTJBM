@@ -4,11 +4,16 @@ import { MemberAvatar } from "@/components/member-avatar";
 import { MembersAppShell } from "@/components/members/app-shell";
 import { MemberForm } from "@/components/members/member-form";
 import {
+  MemberFollowUpPanel,
+  MemberMilestonesPanel,
+  MemberTagsPanel,
+} from "@/components/members/enrichment-panels";
+import {
   BranchTransferForm,
   StatusChangeForm,
 } from "@/components/members/status-transfer-forms";
 import { requireMembersAccess } from "@/lib/auth-guards";
-import { canWriteMembers } from "@/lib/roles";
+import { canAccessFinance, canWriteMembers } from "@/lib/roles";
 import { getScopedBranchIds } from "@/lib/members/access";
 import {
   changeMemberStatusAction,
@@ -47,6 +52,16 @@ export default async function MemberDetailPage({ params }: { params: Params }) {
   const dob = member.dateOfBirth
     ? member.dateOfBirth.toISOString().slice(0, 10)
     : null;
+  const joinedAt = member.joinedAt
+    ? member.joinedAt.toISOString().slice(0, 10)
+    : null;
+  const baptismDate = member.baptismDate
+    ? member.baptismDate.toISOString().slice(0, 10)
+    : null;
+  const confirmationDate = member.confirmationDate
+    ? member.confirmationDate.toISOString().slice(0, 10)
+    : null;
+  const financeOk = canAccessFinance(session.user.role);
 
   return (
     <MembersAppShell
@@ -75,6 +90,14 @@ export default async function MemberDetailPage({ params }: { params: Params }) {
             <Link href={`/members/${member.id}/print`} className="lt-btn-secondary">
               Print individual
             </Link>
+            {financeOk ? (
+              <Link
+                href={`/finance/statements?memberId=${member.id}`}
+                className="lt-btn-secondary"
+              >
+                Contribution statement
+              </Link>
+            ) : null}
             <Link href="/members" className="lt-btn-secondary">
               Back to list
             </Link>
@@ -117,6 +140,9 @@ export default async function MemberDetailPage({ params }: { params: Params }) {
             householdName: householdLink?.household.name ?? null,
             householdRelation: householdLink?.relation ?? "Head",
             photoUrl: photoPublicUrl(member.photoKey),
+            joinedAt,
+            baptismDate,
+            confirmationDate,
           }}
         />
 
@@ -139,6 +165,23 @@ export default async function MemberDetailPage({ params }: { params: Params }) {
               />
             </>
           ) : null}
+
+          <MemberTagsPanel
+            memberId={member.id}
+            tags={member.tags}
+            writeOk={writeOk}
+          />
+          <MemberMilestonesPanel
+            memberId={member.id}
+            milestones={member.milestones}
+            writeOk={writeOk}
+          />
+          <MemberFollowUpPanel
+            memberId={member.id}
+            followUps={member.followUps}
+            writeOk={writeOk}
+            isVisitor={member.status === "Visitor"}
+          />
 
           <section className="rounded-xl border border-slate-200 bg-white/90 p-4 space-y-3">
             <h3 className="text-sm font-medium text-slate-800">Household</h3>

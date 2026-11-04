@@ -19,6 +19,8 @@ enum Role {
   PastoralBoard
   LeadershipCouncil
   Admin
+  /// Member self-service portal only — own profile + own giving statement.
+  Member
 }
 
 model User {
@@ -28,12 +30,19 @@ model User {
   passwordHash String
   role         Role
   isActive     Boolean           @default(true)
+  /// Linked member record for portal users (and optional staff self-link).
+  memberId     String?           @unique
+  member       Member?           @relation("UserMemberLink", fields: [memberId], references: [id], onDelete: SetNull)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   branchScopes UserBranchScope[]
   auditLogs    AuditLog[]        @relation("AuditActor")
   statusChanges MemberStatusHistory[] @relation("StatusChangedBy")
   savedReports SavedReport[]
+  followUpsAssigned VisitorFollowUp[] @relation("FollowUpAssignee")
+  followUpsCreated  VisitorFollowUp[] @relation("FollowUpCreator")
+  pastoralNotes     PastoralCareNote[] @relation("PastoralAuthor")
+  attendanceMarked  AttendanceRecord[] @relation("AttendanceMarker")
 }
 
 /// Branch / unit scope for Branch Leaders (and similar limited roles).
@@ -79,6 +88,8 @@ model Branch {
   userScopes   UserBranchScope[]
   statusFrom   MemberStatusHistory[] @relation("TransferFrom")
   statusTo     MemberStatusHistory[] @relation("TransferTo")
+  attendanceSessions AttendanceSession[]
+  churchEvents ChurchEvent[]
 }
 
 model Cell {
@@ -89,6 +100,7 @@ model Cell {
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
   memberships GroupMembership[]
+  attendanceSessions AttendanceSession[]
 
   @@unique([branchId, name])
 }
@@ -130,6 +142,7 @@ model GroupMembership {
 
 enum MemberStatus {
   Active
+  Visitor
   Inactive
   Transferred
   Deceased
@@ -137,37 +150,49 @@ enum MemberStatus {
 }
 
 model Member {
-  id           String                @id @default(cuid())
-  memberNumber String?               @unique
-  firstName    String
-  lastName     String
-  otherNames   String?
-  dateOfBirth  DateTime?
-  gender       String?
-  phone        String?
-  email        String?
-  addressLine1 String?
-  addressLine2 String?
-  city         String?
-  region       String?
-  country      String?
-  photoKey     String?
-  status       MemberStatus          @default(Active)
-  branchId     String
-  branch       Branch                @relation(fields: [branchId], references: [id])
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  households   HouseholdMember[]
-  groups       GroupMembership[]
-  statusHistory MemberStatusHistory[]
-  obligations  Obligation[]
-  duplicateAsA DuplicateCandidate[]  @relation("DuplicateA")
-  duplicateAsB DuplicateCandidate[]  @relation("DuplicateB")
+  id               String                @id @default(cuid())
+  memberNumber     String?               @unique
+  firstName        String
+  lastName         String
+  otherNames       String?
+  dateOfBirth      DateTime?
+  gender           String?
+  phone            String?
+  email            String?
+  addressLine1     String?
+  addressLine2     String?
+  city             String?
+  region           String?
+  country          String?
+  photoKey         String?
+  status           MemberStatus          @default(Active)
+  /// Church join / reception date (distinct from system createdAt).
+  joinedAt         DateTime?
+  baptismDate      DateTime?
+  confirmationDate DateTime?
+  branchId         String
+  branch           Branch                @relation(fields: [branchId], references: [id])
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  households       HouseholdMember[]
+  groups           GroupMembership[]
+  statusHistory    MemberStatusHistory[]
+  obligations      Obligation[]
+  duplicateAsA     DuplicateCandidate[]  @relation("DuplicateA")
+  duplicateAsB     DuplicateCandidate[]  @relation("DuplicateB")
+  tags             MemberTag[]
+  milestones       MemberMilestone[]
+  followUps        VisitorFollowUp[]
+  attendance       AttendanceRecord[]
+  pastoralNotes    PastoralCareNote[]
+  portalUser       User?                 @relation("UserMemberLink")
 
   @@index([lastName, firstName])
   @@index([phone])
   @@index([branchId])
   @@index([dateOfBirth])
+  @@index([status])
+  @@index([joinedAt])
 }
 
 model Household {
@@ -385,4 +410,243 @@ model DomainListValue {
   domainList   DomainList @relation(fields: [domainListId], references: [id], onDelete: Cascade)
 
   @@unique([domainListId, value])
+}
+
+// ─── Phase D — tags, milestones, visitor follow-up ───────────────────────────
+
+model Tag {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  color     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  members   MemberTag[]
+}
+
+model MemberTag {
+  id        String   @id @default(cuid())
+  memberId  String
+  tagId     String
+  createdAt DateTime @default(now())
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, tagId])
+  @@index([tagId])
+}
+
+enum MilestoneKind {
+  Birthday
+  WeddingAnniversary
+  Baptism
+  Confirmation
+  Dedication
+  Other
+}
+
+model MemberMilestone {
+  id          String        @id @default(cuid())
+  memberId    String
+  kind        MilestoneKind
+  occurredOn  DateTime
+  title       String?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  member      Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId, occurredOn])
+  @@index([kind, occurredOn])
+}
+
+enum FollowUpStatus {
+  Open
+  InProgress
+  Completed
+  Cancelled
+}
+
+model VisitorFollowUp {
+  id           String         @id @default(cuid())
+  memberId     String
+  status       FollowUpStatus @default(Open)
+  firstVisitOn DateTime?
+  notes        String?
+  nextActionOn DateTime?
+  assignedToId String?
+  createdById  String?
+  completedAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  member       Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  assignedTo   User?          @relation("FollowUpAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy    User?          @relation("FollowUpCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([status, nextActionOn])
+  @@index([memberId])
+}
+
+// ─── Phase D — attendance (manual MVP) ───────────────────────────────────────
+
+enum AttendanceKind {
+  Service
+  Cell
+}
+
+model AttendanceSession {
+  id           String         @id @default(cuid())
+  kind         AttendanceKind
+  label        String
+  heldAt       DateTime
+  branchId     String
+  cellId       String?
+  headcount    Int?
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  branch       Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  cell         Cell?          @relation(fields: [cellId], references: [id], onDelete: SetNull)
+  records      AttendanceRecord[]
+
+  @@index([branchId, heldAt])
+  @@index([cellId, heldAt])
+}
+
+model AttendanceRecord {
+  id         String            @id @default(cuid())
+  sessionId  String
+  memberId   String
+  present    Boolean           @default(true)
+  markedById String?
+  notes      String?
+  createdAt  DateTime          @default(now())
+  session    AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  member     Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  markedBy   User?             @relation("AttendanceMarker", fields: [markedById], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, memberId])
+  @@index([memberId])
+}
+
+// ─── Phase D — pastoral care (restricted) ────────────────────────────────────
+
+enum PastoralNoteKind {
+  Prayer
+  Visitation
+  Counselling
+  Wedding
+  Funeral
+  Dedication
+  Other
+}
+
+model PastoralCareNote {
+  id         String           @id @default(cuid())
+  memberId   String?
+  kind       PastoralNoteKind
+  title      String
+  body       String
+  occurredOn DateTime         @default(now())
+  isPrivate  Boolean          @default(true)
+  authorId   String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  member     Member?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  author     User?            @relation("PastoralAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([kind, occurredOn])
+  @@index([memberId])
+}
+
+// ─── Phase D — events calendar MVP ───────────────────────────────────────────
+
+model ChurchEvent {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  location    String?
+  branchId    String?
+  capacity    Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  branch      Branch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  registrations EventRegistration[]
+
+  @@index([startsAt])
+  @@index([branchId])
+}
+
+model EventRegistration {
+  id        String      @id @default(cuid())
+  eventId   String
+  name      String
+  phone     String?
+  email     String?
+  memberId  String?
+  notes     String?
+  createdAt DateTime    @default(now())
+  event     ChurchEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+// ─── Phase D — communication channel stubs ───────────────────────────────────
+
+enum CommChannelKind {
+  Email
+  Sms
+  WhatsApp
+  Push
+}
+
+model CommunicationChannel {
+  id          String          @id @default(cuid())
+  kind        CommChannelKind @unique
+  label       String
+  isEnabled   Boolean         @default(false)
+  /// Provider config (API keys must stay in env — store non-secret settings only).
+  configJson  Json            @default("{}")
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+enum MessageTemplateKind {
+  Birthday
+  Welcome
+  Receipt
+  BoardReport
+  Custom
+}
+
+model MessageTemplate {
+  id        String              @id @default(cuid())
+  kind      MessageTemplateKind
+  name      String
+  subject   String?
+  body      String
+  channel   CommChannelKind     @default(Email)
+  isActive  Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@index([kind])
+}
+
+/// Outbound stub log — records “would send” until live providers are wired.
+model MessageOutbox {
+  id          String          @id @default(cuid())
+  channel     CommChannelKind
+  templateKind MessageTemplateKind?
+  toAddress   String
+  subject     String?
+  body        String
+  status      String          @default("stubbed")
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+
+  @@index([createdAt])
+  @@index([status])
 }

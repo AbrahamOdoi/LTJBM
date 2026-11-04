@@ -176,6 +176,12 @@ export async function registerMemberAction(
       photoKey = await saveMemberPhoto(photo);
     }
 
+    const initialStatus =
+      data.registerAs === "Visitor" ? "Visitor" : "Active";
+    const joinedAt = parseDob(data.joinedAt);
+    const baptismDate = parseDob(data.baptismDate);
+    const confirmationDate = parseDob(data.confirmationDate);
+
     const member = await prisma.$transaction(async (tx) => {
       const created = await tx.member.create({
         data: {
@@ -193,7 +199,10 @@ export async function registerMemberAction(
           region: data.region,
           country: data.country ?? branch.country,
           photoKey,
-          status: "Active",
+          status: initialStatus,
+          joinedAt: joinedAt ?? new Date(),
+          baptismDate,
+          confirmationDate,
           branchId: data.branchId,
         },
       });
@@ -210,12 +219,27 @@ export async function registerMemberAction(
         data: {
           memberId: created.id,
           fromStatus: null,
-          toStatus: "Active",
+          toStatus: initialStatus,
           toBranchId: data.branchId,
-          reason: "Initial registration",
+          reason:
+            initialStatus === "Visitor"
+              ? "First-timer / visitor registration"
+              : "Initial registration",
           changedById: session.user.id,
         },
       });
+
+      if (initialStatus === "Visitor") {
+        await tx.visitorFollowUp.create({
+          data: {
+            memberId: created.id,
+            firstVisitOn: joinedAt ?? new Date(),
+            notes: "Auto-opened on visitor registration",
+            createdById: session.user.id,
+            assignedToId: session.user.id,
+          },
+        });
+      }
 
       await writeAuditLog(
         {
@@ -289,6 +313,9 @@ export async function updateMemberAction(
     }
 
     const dob = parseDob(data.dateOfBirth);
+    const joinedAt = parseDob(data.joinedAt);
+    const baptismDate = parseDob(data.baptismDate);
+    const confirmationDate = parseDob(data.confirmationDate);
     const photo = formData.get("photo");
     let newPhotoKey: string | undefined;
     if (photo instanceof File && photo.size > 0) {
@@ -316,6 +343,9 @@ export async function updateMemberAction(
           city: data.city,
           region: data.region,
           country: data.country,
+          joinedAt,
+          baptismDate,
+          confirmationDate,
           ...(newPhotoKey ? { photoKey: newPhotoKey } : {}),
         },
       });
