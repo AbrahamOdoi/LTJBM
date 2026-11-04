@@ -1,26 +1,185 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Living Ledger — LTJBM CDMS */
+  --lt-ink: #102820;
+  --lt-ink-soft: #1a3d32;
+  --lt-accent: #2f6f5e;
+  --lt-accent-bright: #3d8f78;
+  --lt-brass: #9a7b4f;
+  --lt-paper: #eef3f0;
+  --lt-paper-elevated: #ffffff;
+  --lt-line: #d0dbd5;
+  --lt-muted: #5c6b64;
+  --lt-ok: #2a6b4f;
+  --lt-warn: #8a6a28;
+  --lt-danger: #9b3b3b;
+  --lt-focus: rgba(47, 111, 94, 0.45);
+  --lt-login-deep: #0b1f1a;
+  --lt-login-mid: #142e27;
+
+  --background: var(--lt-paper);
+  --foreground: var(--lt-ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-lt-ink: var(--lt-ink);
+  --color-lt-ink-soft: var(--lt-ink-soft);
+  --color-lt-accent: var(--lt-accent);
+  --color-lt-accent-bright: var(--lt-accent-bright);
+  --color-lt-brass: var(--lt-brass);
+  --color-lt-paper: var(--lt-paper);
+  --color-lt-paper-elevated: var(--lt-paper-elevated);
+  --color-lt-line: var(--lt-line);
+  --color-lt-muted: var(--lt-muted);
+  --color-lt-ok: var(--lt-ok);
+  --color-lt-warn: var(--lt-warn);
+  --color-lt-danger: var(--lt-danger);
+  --font-sans: var(--font-outfit);
+  --font-display: var(--font-fraunces);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--lt-paper);
+  color: var(--lt-ink);
+  font-family: var(--font-outfit), "Segoe UI", sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+}
+
+/* Atmospheric app canvas — cool mist, not cream / not purple */
+.lt-canvas {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(47, 111, 94, 0.14), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 100% 100%, rgba(154, 123, 79, 0.06), transparent 45%),
+    linear-gradient(165deg, #f4f8f6 0%, var(--lt-paper) 42%, #e6eee9 100%);
+  color: var(--lt-ink);
+}
+
+.lt-login-canvas {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 90% 70% at 30% 0%, #1a453a 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 80%, rgba(154, 123, 79, 0.18), transparent 50%),
+    linear-gradient(165deg, var(--lt-login-mid) 0%, var(--lt-login-deep) 100%);
+  color: #e8f0ec;
+}
+
+.lt-panel {
+  background: var(--lt-paper-elevated);
+  border: 1px solid var(--lt-line);
+  border-radius: 0.5rem;
+}
+
+.lt-table-wrap {
+  overflow-x: auto;
+  background: var(--lt-paper-elevated);
+  border: 1px solid var(--lt-line);
+  border-radius: 0.5rem;
+}
+
+.lt-input {
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid var(--lt-line);
+  background: var(--lt-paper-elevated);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--lt-ink);
+  outline: none;
+}
+
+.lt-input:focus {
+  border-color: var(--lt-accent);
+  box-shadow: 0 0 0 3px var(--lt-focus);
+}
+
+.lt-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  background: var(--lt-accent);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fff;
+  transition: background-color 150ms ease;
+}
+
+.lt-btn-primary:hover {
+  background: var(--lt-accent-bright);
+}
+
+.lt-btn-primary:disabled {
+  opacity: 0.6;
+}
+
+.lt-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid var(--lt-line);
+  background: var(--lt-paper-elevated);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--lt-ink);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.lt-btn-secondary:hover {
+  background: #f3f7f5;
+  border-color: #b9c8c0;
+}
+
+.lt-link {
+  color: var(--lt-accent);
+  font-weight: 500;
+}
+
+.lt-link:hover {
+  color: var(--lt-ink-soft);
+  text-decoration: underline;
+}
+
+@keyframes lt-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lt-brand-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lt-enter {
+  animation: lt-enter 400ms ease-out both;
+}
+
+.lt-brand-in {
+  animation: lt-brand-in 500ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lt-enter,
+  .lt-brand-in {
+    animation: none;
+  }
 }

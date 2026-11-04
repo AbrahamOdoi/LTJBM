@@ -19,25 +19,25 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     email: "clerk@ltjbm.local",
     role: "RecordsClerk",
     label: ROLE_LABELS.RecordsClerk,
-    blurb: "Register members · no finance",
+    blurb: "Member register · no contributions",
   },
   {
     email: "branch@ltjbm.local",
     role: "BranchLeader",
     label: ROLE_LABELS.BranchLeader,
-    blurb: "Own-branch members only",
+    blurb: "Your branch members only",
   },
   {
     email: "finance@ltjbm.local",
     role: "FinancialSecretary",
     label: ROLE_LABELS.FinancialSecretary,
-    blurb: "Pledges, batches, arrears",
+    blurb: "Pledges, tithes, collection batches",
   },
   {
     email: "board@ltjbm.local",
     role: "PastoralBoard",
     label: ROLE_LABELS.PastoralBoard,
-    blurb: "Board rollups (aggregated)",
+    blurb: "Expected / Paid / Outstanding",
   },
   {
     email: "council@ltjbm.local",
@@ -49,6 +49,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     email: "admin@ltjbm.local",
     role: "Admin",
     label: ROLE_LABELS.Admin,
-    blurb: "Domains, users, export",
+    blurb: "Dropdown lists, users, export",
   },
 ];

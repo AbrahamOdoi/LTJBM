@@ -53,32 +53,32 @@ export function LoginForm() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <form
         onSubmit={onSubmit}
-        className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+        className="space-y-4 rounded-lg border border-white/10 bg-white/[0.06] p-6 backdrop-blur-sm"
       >
         <label className="block text-sm">
-          <span className="text-slate-300">Email</span>
+          <span className="text-[#b8d0c4]">Email</span>
           <input
             ref={emailRef}
             name="email"
             type="email"
             required
             autoComplete="username"
-            className="mt-1 w-full rounded-md border border-white/15 bg-slate-950/60 px-3 py-2 text-slate-100 outline-none focus:border-sky-400"
+            className="mt-1.5 w-full rounded-md border border-white/15 bg-[#0b1f1a]/70 px-3 py-2.5 text-[#eef5f1] outline-none transition focus:border-[var(--lt-accent-bright)] focus:shadow-[0_0_0_3px_rgba(61,143,120,0.35)]"
             placeholder="clerk@ltjbm.local"
           />
         </label>
         <label className="block text-sm">
-          <span className="text-slate-300">Password</span>
+          <span className="text-[#b8d0c4]">Password</span>
           <input
             ref={passwordRef}
             name="password"
             type="password"
             required
             autoComplete="current-password"
-            className="mt-1 w-full rounded-md border border-white/15 bg-slate-950/60 px-3 py-2 text-slate-100 outline-none focus:border-sky-400"
+            className="mt-1.5 w-full rounded-md border border-white/15 bg-[#0b1f1a]/70 px-3 py-2.5 text-[#eef5f1] outline-none transition focus:border-[var(--lt-accent-bright)] focus:shadow-[0_0_0_3px_rgba(61,143,120,0.35)]"
           />
         </label>
         {error ? (
@@ -89,22 +89,23 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-md bg-sky-500 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-sky-400 disabled:opacity-60"
+          className="w-full rounded-md bg-[var(--lt-accent-bright)] px-3 py-2.5 text-sm font-medium text-[#0b1f1a] transition hover:bg-[#4aa58c] disabled:opacity-60"
         >
           {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>
 
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 className="text-sm font-medium text-slate-100">Demo roles</h2>
-          <p className="text-xs text-slate-400">
-            Password: <code className="text-sky-200">{DEMO_PASSWORD_HINT}</code>
+      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-medium text-[#e8f0ec]">Demo ministry roles</h2>
+          <p className="text-xs text-[#8fafa1]">
+            Demo password:{" "}
+            <span className="text-[#c9e0d4]">{DEMO_PASSWORD_HINT}</span>
           </p>
         </div>
-        <p className="mt-1 text-xs text-slate-400 leading-relaxed">
-          Tap a role to fill the form, then sign in. Useful for Section 8 access
-          walkthroughs.
+        <p className="mt-1 text-xs leading-relaxed text-[#8fafa1]">
+          Choose a role to fill the form, then sign in. For walkthroughs only —
+          not for production hosts.
         </p>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
           {DEMO_ACCOUNTS.map((account) => {
@@ -114,16 +115,16 @@ export function LoginForm() {
                 <button
                   type="button"
                   onClick={() => fillDemo(account)}
-                  className={`w-full rounded-md border px-3 py-2 text-left transition ${
+                  className={`w-full rounded-md border px-3 py-2.5 text-left transition ${
                     active
-                      ? "border-sky-400/70 bg-sky-500/15"
-                      : "border-white/10 bg-slate-950/40 hover:border-white/25"
+                      ? "border-[var(--lt-accent-bright)]/70 bg-[var(--lt-accent)]/25"
+                      : "border-white/10 bg-[#0b1f1a]/40 hover:border-white/25"
                   }`}
                 >
-                  <span className="block text-sm font-medium text-slate-100">
+                  <span className="block text-sm font-medium text-[#eef5f1]">
                     {account.label}
                   </span>
-                  <span className="mt-0.5 block text-xs text-slate-400">
+                  <span className="mt-0.5 block text-xs text-[#8fafa1]">
                     {account.blurb}
                   </span>
                 </button>

@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { MoneyCell } from "@/components/finance/money-cell";
+import { obligationKindLabel } from "@/lib/church-labels";
 import { getBalanceRollup, listCollectionBatches } from "@/lib/finance/service";
 import { canWriteFinance } from "@/lib/roles";
 import Link from "next/link";
@@ -16,13 +17,15 @@ export default async function FinancePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Finance overview</h2>
-        <p className="mt-1 text-slate-600">
-          Post pledges, special projects, and Saturday collections here. Totals
-          feed Board reports automatically
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--lt-ink)]">
+          Contributions overview
+        </h2>
+        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--lt-muted)]">
+          Record pledges, tithes, dues, thanksgiving, and special project
+          contributions at Head Office. Totals feed Board reports automatically
           {canWriteFinance(role)
-            ? " — you can post and reconcile."
-            : " — your account is read-only on this surface."}
+            ? " — you may post and reconcile."
+            : " — your account is read-only here."}
         </p>
       </div>
 
@@ -36,9 +39,9 @@ export default async function FinancePage() {
         />
       </section>
 
-      <section className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+      <section className="lt-table-wrap">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-left text-slate-600">
+          <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
             <tr>
               <th className="px-4 py-3 font-medium">Kind</th>
               <th className="px-4 py-3 font-medium">Obligations</th>
@@ -49,8 +52,13 @@ export default async function FinancePage() {
           </thead>
           <tbody>
             {rollup.byKind.map((row) => (
-              <tr key={row.kind} className="border-t border-slate-100">
-                <td className="px-4 py-3">{row.kind}</td>
+              <tr
+                key={row.kind}
+                className="border-t border-[var(--lt-line)]/70"
+              >
+                <td className="px-4 py-3 font-medium text-[var(--lt-ink)]">
+                  {obligationKindLabel(row.kind)}
+                </td>
                 <td className="px-4 py-3 tabular-nums">{row.obligationCount}</td>
                 <td className="px-4 py-3">
                   <MoneyCell value={row.expected} />
@@ -71,32 +79,28 @@ export default async function FinancePage() {
       </section>
 
       <section className="flex flex-wrap gap-3">
-        <Link
-          href="/finance/obligations"
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-        >
-          Manage obligations
+        <Link href="/finance/obligations" className="lt-btn-primary">
+          Pledges &amp; obligations
         </Link>
-        <Link
-          href="/finance/batches"
-          className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
-        >
-          Saturday batches
+        <Link href="/finance/batches" className="lt-btn-secondary">
+          Saturday collection batches
           {openVariances.length > 0
             ? ` (${openVariances.length} variance)`
             : ""}
         </Link>
-        <Link
-          href="/finance/arrears"
-          className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
-        >
+        <Link href="/finance/arrears" className="lt-btn-secondary">
           Dues arrears
         </Link>
       </section>
 
-      <p className="text-xs text-slate-500">
-        After you post a payment, open <Link href="/reports" className="text-sky-800 hover:underline">Reports</Link>{" "}
-        to show the Board dashboard refreshing without a manual rebuild.
+      <p className="text-xs text-[var(--lt-muted)]">
+        After you post a payment, open{" "}
+        <Link href="/reports" className="lt-link">
+          Board reports
+        </Link>{" "}
+        to show Expected / Paid / Outstanding refreshing without a manual
+        rebuild. Individual giving stays here — Board never drills into named
+        givers.
       </p>
     </div>
   );
@@ -112,9 +116,9 @@ function SummaryTile({
   emphasize?: "ok" | "warn";
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl">
+    <div className="lt-panel p-4">
+      <p className="text-sm text-[var(--lt-muted)]">{label}</p>
+      <p className="mt-1 font-display text-2xl">
         <MoneyCell value={value} emphasize={emphasize} />
       </p>
     </div>

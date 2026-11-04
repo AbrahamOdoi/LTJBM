@@ -43,10 +43,12 @@ export default async function ObligationsPage({
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Obligations</h2>
-        <p className="mt-1 text-slate-600">
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--lt-ink)]">
+          Pledges &amp; contribution obligations
+        </h2>
+        <p className="mt-1.5 text-sm text-[var(--lt-muted)]">
           Pledge (instalments), Special Project (targets), Tithe, Dues,
-          Thanksgiving.
+          Thanksgiving — Head Office posting only.
         </p>
       </div>
 
@@ -83,9 +85,9 @@ export default async function ObligationsPage({
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <div className="lt-table-wrap">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
+            <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
               <tr>
                 <th className="px-4 py-3 font-medium">Member</th>
                 <th className="px-4 py-3 font-medium">Type</th>
@@ -97,11 +99,11 @@ export default async function ObligationsPage({
             </thead>
             <tbody>
               {obligations.map((ob) => (
-                <tr key={ob.id} className="border-t border-slate-100">
+                <tr key={ob.id} className="border-t border-[var(--lt-line)]/70">
                   <td className="px-4 py-3">
                     <Link
                       href={`/finance/obligations/${ob.id}`}
-                      className="font-medium text-sky-800 hover:underline"
+                      className="lt-link"
                     >
                       {ob.member.name}
                     </Link>
@@ -153,10 +155,10 @@ function FilterChip({
   return (
     <Link
       href={href}
-      className={`rounded-md px-3 py-1.5 ${
+      className={`rounded-md px-3 py-1.5 transition-colors ${
         active
-          ? "bg-slate-900 text-white"
-          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          ? "bg-[var(--lt-ink)] text-white"
+          : "lt-btn-secondary !py-1.5"
       }`}
     >
       {label}
