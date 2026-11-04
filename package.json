@@ -20,6 +20,7 @@
     "smoke:finance": "tsx scripts/smoke-finance.ts",
     "test:security": "tsx --test src/lib/roles.test.ts",
     "report:monthly": "tsx scripts/send-board-report.ts",
+    "comms:automations": "tsx scripts/run-comms-automations.ts",
     "backup:db": "bash scripts/backup-db.sh",
     "restore:db": "bash scripts/restore-db.sh",
     "postinstall": "prisma generate"
@@ -32,6 +33,7 @@
     "bcryptjs": "^3.0.3",
     "next": "15.5.29",
     "next-auth": "^5.0.0-beta.32",
+    "nodemailer": "^8.0.11",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "zod": "^4.6.7"
@@ -41,6 +43,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

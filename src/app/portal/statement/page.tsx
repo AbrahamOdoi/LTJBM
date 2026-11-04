@@ -38,6 +38,7 @@ export default async function PortalStatementPage({
       subNav={[
         { href: "/portal", label: "My profile" },
         { href: "/portal/statement", label: "My statement" },
+        { href: "/give", label: "Give online" },
       ]}
     >
       <form

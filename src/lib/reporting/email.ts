@@ -8,12 +8,16 @@ import {
 } from "@/lib/reporting/service";
 import { getDashboardSnapshot } from "@/lib/reporting/aggregates";
 import { writeAuditLog } from "@/lib/audit";
+import { isSmtpConfigured, sendSmtpHtml } from "@/lib/comms/providers";
+
+export type BoardEmailMode = "file" | "console" | "smtp";
 
 export type BoardEmailDelivery = {
-  mode: "file" | "console";
+  mode: BoardEmailMode;
   recipients: string[];
   subject: string;
   artifactPath: string | null;
+  smtpDetail: string | null;
   generatedAt: string;
   scheduleId: string | null;
 };
@@ -25,9 +29,11 @@ function reportOutputDir(): string {
   );
 }
 
-function emailMode(): "file" | "console" {
+function emailMode(): BoardEmailMode {
   const raw = (process.env.REPORT_EMAIL_MODE ?? "file").toLowerCase();
-  return raw === "console" ? "console" : "file";
+  if (raw === "console") return "console";
+  if (raw === "smtp") return "smtp";
+  return "file";
 }
 
 export function renderBoardReportHtml(
@@ -91,7 +97,7 @@ export function renderBoardReportHtml(
     </tbody>
   </table>
   <p class="meta" style="margin-top:24px">
-    Source contract: ${escapeHtml(snapshot.financeContract)}. Reporting reads aggregates only.
+    Source contract: ${escapeHtml(snapshot.financeContract)}. Reporting reads aggregates only — never named givers.
   </p>
 </body>
 </html>`;
@@ -106,9 +112,8 @@ function escapeHtml(value: string): string {
 }
 
 /**
- * Demo-friendly monthly Board email.
- * Default mode writes HTML under tmp/board-reports (or REPORT_EMAIL_DIR).
- * Set REPORT_EMAIL_MODE=console to print path + subject instead.
+ * Monthly Board email — aggregates only.
+ * Modes: file (default), console, smtp (live when SMTP_* present).
  */
 export async function sendMonthlyBoardReport(opts?: {
   actorId?: string | null;
@@ -132,8 +137,30 @@ export async function sendMonthlyBoardReport(opts?: {
     recipients,
   });
 
-  const mode = emailMode();
+  let mode = emailMode();
   let artifactPath: string | null = null;
+  let smtpDetail: string | null = null;
+
+  if (mode === "smtp") {
+    if (!isSmtpConfigured()) {
+      console.warn(
+        "[board-report] REPORT_EMAIL_MODE=smtp but SMTP credentials absent — falling back to file. Set SMTP_HOST and SMTP_FROM.",
+      );
+      mode = "file";
+      smtpDetail =
+        "SMTP credentials absent — wrote file instead. Set SMTP_HOST and SMTP_FROM for live Board email.";
+    } else {
+      const result = await sendSmtpHtml({ to: recipients, subject, html });
+      smtpDetail = result.detail;
+      if (!result.ok) {
+        console.warn(
+          "[board-report] SMTP send failed — writing file fallback:",
+          result.detail,
+        );
+        mode = "file";
+      }
+    }
+  }
 
   if (mode === "file") {
     const dir = reportOutputDir();
@@ -141,7 +168,7 @@ export async function sendMonthlyBoardReport(opts?: {
     const filename = `board-report-${new Date().toISOString().replace(/[:.]/g, "-")}.html`;
     artifactPath = path.join(dir, filename);
     await writeFile(artifactPath, html, "utf8");
-  } else {
+  } else if (mode === "console") {
     console.log("[board-report]", subject);
     console.log(html.slice(0, 500), "...");
   }
@@ -159,7 +186,9 @@ export async function sendMonthlyBoardReport(opts?: {
       mode,
       recipients,
       artifactPath,
+      smtpDetail,
       totals: snapshot.totals,
+      aggregatesOnly: true,
     },
   });
 
@@ -168,6 +197,7 @@ export async function sendMonthlyBoardReport(opts?: {
     recipients,
     subject,
     artifactPath,
+    smtpDetail,
     generatedAt: snapshot.generatedAt,
     scheduleId: schedule?.id ?? null,
   };
