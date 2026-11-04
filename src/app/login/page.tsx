@@ -1,16 +1,17 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { LoginForm } from "@/components/login-form";
+import { defaultPathForRole } from "@/lib/role-labels";
 
 export default async function LoginPage() {
   const session = await auth();
   if (session?.user) {
-    redirect("/");
+    redirect(defaultPathForRole(session.user.role));
   }
 
   return (
     <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#1e3a5f_0%,_#0f172a_55%,_#020617_100%)] text-slate-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-lg">
         <p className="text-sm tracking-[0.2em] uppercase text-sky-300/80 mb-3">
           LTJBM
         </p>
@@ -18,8 +19,9 @@ export default async function LoginPage() {
           Church Database Management System
         </h1>
         <p className="text-slate-300 mb-8 text-sm leading-relaxed">
-          Sign in with your assigned role. Finance screens are HQ-only and
-          blocked for Records Clerks.
+          Sign in with your assigned role. Use the demo role buttons below for
+          walkthroughs — Finance stays HQ-only and is blocked for Records
+          Clerks.
         </p>
         <LoginForm />
       </div>

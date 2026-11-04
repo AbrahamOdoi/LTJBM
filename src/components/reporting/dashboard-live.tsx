@@ -107,15 +107,20 @@ export function DashboardLive({
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">{layout.title}</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Live from DB ({data.source}) · last refresh{" "}
+            Live totals · last refresh{" "}
             <time dateTime={data.generatedAt}>
               {new Date(data.generatedAt).toLocaleString()}
             </time>
             {pending ? " · refreshing…" : ""}
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            View: {data.view ?? "unknown"} · role {data.role} · payments update
-            these figures without a manual rebuild
+            {data.view === "board"
+              ? "Pastoral Board view"
+              : data.view === "council"
+                ? "Leadership Council view (includes branch & period)"
+                : "Full admin / finance view"}
+            {" · "}
+            figures update when payments are posted — no manual rebuild
           </p>
         </div>
         <button
@@ -272,9 +277,8 @@ export function DashboardLive({
       ) : null}
 
       <p className="text-xs text-slate-500">
-        Finance contract:{" "}
-        <code className="rounded bg-slate-100 px-1">{data.financeContract}</code>
-        . Reporting never posts payments.
+        Reporting shows aggregated Expected / Paid / Outstanding only. Individual
+        giving stays on Finance for authorised roles.
       </p>
     </div>
   );

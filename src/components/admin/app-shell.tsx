@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { AppNav } from "@/components/app-nav";
 import { SignOutButton } from "@/components/sign-out-button";
+import { Role } from "@/lib/roles";
 
 type Props = {
   children: React.ReactNode;
@@ -8,7 +10,7 @@ type Props = {
   userName?: string | null;
 };
 
-const nav = [
+const subNav = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/domains", label: "Domains" },
   { href: "/admin/users", label: "Users" },
@@ -21,24 +23,11 @@ export function AdminAppShell({ children, title, subtitle, userName }: Props) {
     <div className="min-h-screen bg-[linear-gradient(165deg,#f7f5f1_0%,#eef2f7_50%,#e4ebf3_100%)] text-slate-900">
       <header className="border-b border-slate-200/80 bg-white/75 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <div className="flex flex-wrap items-center gap-6">
+          <div className="flex flex-wrap items-center gap-5">
             <Link href="/" className="text-sm font-semibold tracking-tight text-slate-800">
               LTJBM CDMS
             </Link>
-            <nav className="flex flex-wrap items-center gap-3 text-sm">
-              {nav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-sky-900 hover:underline"
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <Link href="/members" className="text-slate-500 hover:underline">
-                Members
-              </Link>
-            </nav>
+            <AppNav role={Role.Admin} active="admin" />
           </div>
           <div className="flex items-center gap-3 text-sm text-slate-600">
             <span className="hidden sm:inline">
@@ -48,6 +37,20 @@ export function AdminAppShell({ children, title, subtitle, userName }: Props) {
             <SignOutButton />
           </div>
         </div>
+        <nav
+          className="mx-auto flex max-w-6xl flex-wrap gap-1 px-4 pb-3"
+          aria-label="Admin sections"
+        >
+          {subNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-white/80"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-8 space-y-6">

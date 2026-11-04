@@ -5,6 +5,7 @@ import { AdminAppShell } from "@/components/admin/app-shell";
 import { CreateUserForm } from "@/components/admin/user-forms";
 import { createUserAction } from "@/lib/admin/actions";
 import { listBranchesForAdmin, listUsers } from "@/lib/admin/queries";
+import { roleLabel } from "@/lib/role-labels";
 import { canAccessAdmin } from "@/lib/roles";
 
 export default async function AdminUsersPage() {
@@ -42,7 +43,7 @@ export default async function AdminUsersPage() {
                 <tr key={u.id} className="border-t border-slate-100">
                   <td className="px-4 py-3 font-medium">{u.name}</td>
                   <td className="px-4 py-3 text-slate-600">{u.email}</td>
-                  <td className="px-4 py-3">{u.role}</td>
+                  <td className="px-4 py-3">{roleLabel(u.role)}</td>
                   <td className="px-4 py-3 text-xs text-slate-600">
                     {u.branchScopes.length === 0
                       ? "—"

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import { MembersAppShell } from "@/components/members/app-shell";
 import { DuplicateReviewButtons } from "@/components/members/duplicate-review-buttons";
 import { requireMembersAccess } from "@/lib/auth-guards";
@@ -62,9 +63,12 @@ export default async function DuplicatesPage() {
           </article>
         ))}
         {duplicates.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-300 bg-white/60 px-4 py-8 text-center text-sm text-slate-500">
-            No pending duplicate candidates.
-          </p>
+          <EmptyState
+            title="No pending duplicates"
+            body="When registration finds a matching phone, email, or name + date of birth, candidates appear here for review."
+            actionHref={writeOk ? "/members/new" : undefined}
+            actionLabel={writeOk ? "Register another member" : undefined}
+          />
         ) : null}
       </div>
     </MembersAppShell>

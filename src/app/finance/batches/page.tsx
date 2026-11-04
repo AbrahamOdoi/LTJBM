@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { CreateBatchForm } from "@/components/finance/create-batch-form";
 import { MoneyCell } from "@/components/finance/money-cell";
+import { EmptyState } from "@/components/empty-state";
 import { listCollectionBatches } from "@/lib/finance/service";
 import { canWriteFinance } from "@/lib/roles";
 import Link from "next/link";
@@ -24,65 +25,69 @@ export default async function BatchesPage() {
 
       <CreateBatchForm canWrite={canWrite} />
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-left text-slate-600">
-            <tr>
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Label</th>
-              <th className="px-4 py-3 font-medium">Counted</th>
-              <th className="px-4 py-3 font-medium">System</th>
-              <th className="px-4 py-3 font-medium">Variance</th>
-              <th className="px-4 py-3 font-medium">Flag</th>
-            </tr>
-          </thead>
-          <tbody>
-            {batches.length === 0 && (
+      {batches.length === 0 ? (
+        <EmptyState
+          title="No Saturday batches yet"
+          body={
+            canWrite
+              ? "Create a batch with a counted total. If it differs from the system payment sum, the variance flag appears for reconciliation."
+              : "Ask a Financial Secretary to open a Saturday collection batch for the demo."
+          }
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50 text-left text-slate-600">
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-slate-500">
-                  No batches yet.
-                </td>
+                <th className="px-4 py-3 font-medium">Date</th>
+                <th className="px-4 py-3 font-medium">Label</th>
+                <th className="px-4 py-3 font-medium">Counted</th>
+                <th className="px-4 py-3 font-medium">System</th>
+                <th className="px-4 py-3 font-medium">Variance</th>
+                <th className="px-4 py-3 font-medium">Flag</th>
               </tr>
-            )}
-            {batches.map((b) => (
-              <tr key={b.id} className="border-t border-slate-100">
-                <td className="px-4 py-3 tabular-nums">
-                  <Link
-                    href={`/finance/batches/${b.id}`}
-                    className="font-medium text-sky-800 hover:underline"
-                  >
-                    {b.batchDate.slice(0, 10)}
-                  </Link>
-                </td>
-                <td className="px-4 py-3">{b.label}</td>
-                <td className="px-4 py-3">
-                  <MoneyCell value={b.countedTotal} />
-                </td>
-                <td className="px-4 py-3">
-                  <MoneyCell value={b.systemTotal} />
-                </td>
-                <td className="px-4 py-3">
-                  <MoneyCell
-                    value={b.varianceAmount}
-                    emphasize={b.hasVariance ? "warn" : "muted"}
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  {b.hasVariance ? (
-                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                      Variance
-                    </span>
-                  ) : (
-                    <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                      Balanced
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {batches.map((b) => (
+                <tr key={b.id} className="border-t border-slate-100">
+                  <td className="px-4 py-3 tabular-nums">
+                    <Link
+                      href={`/finance/batches/${b.id}`}
+                      className="font-medium text-sky-800 hover:underline"
+                    >
+                      {b.batchDate.slice(0, 10)}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">{b.label}</td>
+                  <td className="px-4 py-3">
+                    <MoneyCell value={b.countedTotal} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <MoneyCell value={b.systemTotal} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <MoneyCell
+                      value={b.varianceAmount}
+                      emphasize={b.hasVariance ? "warn" : "muted"}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    {b.hasVariance ? (
+                      <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                        Variance
+                      </span>
+                    ) : (
+                      <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                        Balanced
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

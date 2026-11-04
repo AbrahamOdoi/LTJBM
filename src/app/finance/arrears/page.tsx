@@ -1,3 +1,4 @@
+import { EmptyState } from "@/components/empty-state";
 import { MoneyCell } from "@/components/finance/money-cell";
 import { prisma } from "@/lib/db";
 import { listDuesArrears } from "@/lib/finance/service";
@@ -105,65 +106,67 @@ export default async function ArrearsPage({
         {arrears.length === 1 ? "" : "s"} in arrears
       </p>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-left text-slate-600">
-            <tr>
-              <th className="px-4 py-3 font-medium">Member</th>
-              <th className="px-4 py-3 font-medium">Groups</th>
-              <th className="px-4 py-3 font-medium">Period</th>
-              <th className="px-4 py-3 font-medium">Expected</th>
-              <th className="px-4 py-3 font-medium">Paid</th>
-              <th className="px-4 py-3 font-medium">Outstanding</th>
-            </tr>
-          </thead>
-          <tbody>
-            {arrears.length === 0 && (
+      {arrears.length === 0 ? (
+        <EmptyState
+          title="No dues arrears for this filter"
+          body="Clear filters to see all outstanding dues, or open Obligations to confirm dues were posted for the period."
+          actionHref="/finance/obligations?kind=Dues"
+          actionLabel="View dues obligations"
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50 text-left text-slate-600">
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-slate-500">
-                  No dues arrears for this filter.
-                </td>
+                <th className="px-4 py-3 font-medium">Member</th>
+                <th className="px-4 py-3 font-medium">Groups</th>
+                <th className="px-4 py-3 font-medium">Period</th>
+                <th className="px-4 py-3 font-medium">Expected</th>
+                <th className="px-4 py-3 font-medium">Paid</th>
+                <th className="px-4 py-3 font-medium">Outstanding</th>
               </tr>
-            )}
-            {arrears.map((row) => (
-              <tr key={row.id} className="border-t border-slate-100">
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/finance/obligations/${row.id}`}
-                    className="font-medium text-sky-800 hover:underline"
-                  >
-                    {row.member.name}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {row.groups.length === 0
-                    ? "—"
-                    : row.groups
-                        .map((g) =>
-                          g.kind === "Cell"
-                            ? g.cell?.name
-                            : g.fellowshipMinistry?.name,
-                        )
-                        .filter(Boolean)
-                        .join(", ")}
-                </td>
-                <td className="px-4 py-3 tabular-nums">
-                  {row.periodStart.slice(0, 10)}
-                </td>
-                <td className="px-4 py-3">
-                  <MoneyCell value={row.balances.expected} />
-                </td>
-                <td className="px-4 py-3">
-                  <MoneyCell value={row.balances.paid} emphasize="ok" />
-                </td>
-                <td className="px-4 py-3">
-                  <MoneyCell value={row.balances.outstanding} emphasize="warn" />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {arrears.map((row) => (
+                <tr key={row.id} className="border-t border-slate-100">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/finance/obligations/${row.id}`}
+                      className="font-medium text-sky-800 hover:underline"
+                    >
+                      {row.member.name}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {row.groups.length === 0
+                      ? "—"
+                      : row.groups
+                          .map((g) =>
+                            g.kind === "Cell"
+                              ? g.cell?.name
+                              : g.fellowshipMinistry?.name,
+                          )
+                          .filter(Boolean)
+                          .join(", ")}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums">
+                    {row.periodStart.slice(0, 10)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <MoneyCell value={row.balances.expected} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <MoneyCell value={row.balances.paid} emphasize="ok" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <MoneyCell value={row.balances.outstanding} emphasize="warn" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
