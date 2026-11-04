@@ -132,6 +132,8 @@ Default schedule cron: `0 8 1 * *` (08:00 on the 1st) to `board@ltjbm.local` + `
 | `npm run db:studio` | Prisma Studio |
 | `npm run test:finance` | Finance balance / batch variance unit tests |
 | `npm run test:reporting` | Report template layout unit tests |
+| `npm run test:smoke` | Section 8 HTTP smoke (RBAC + finance + reporting) |
+| `npm run smoke:finance` | Service-layer finance seed sanity (no HTTP) |
 | `npm run report:monthly` | Generate monthly Board email artifact |
 | `npm run backup:db` / `npm run restore:db` | Postgres dump/restore via Compose |
 | `npx prisma generate` | Regenerate Prisma Client |
@@ -161,10 +163,11 @@ src/app/api/admin/            Member export + backup snapshot (Admin-only)
 src/components/finance/       Finance forms
 src/components/reporting/     Dashboard live refresh, template editor
 docs/backup-restore.md        Section 8 restore narrative + scripts
-docs/demo-script.md           Section 8 Demo Day script
+docs/demo-script.md           Section 8 ordered demo + pass/fail checklist
 docs/user-guides/             Role user guides (Admin, Finance, Branch, Data Centre)
 scripts/backup-db.sh          Postgres custom-format dump → ./backups
 scripts/restore-db.sh         pg_restore + optional uploads archive
+scripts/smoke-section8.ts     Full Section 8 HTTP smoke harness
 docker-compose.yml            Postgres 16 (+ staging profile `app`)
 Dockerfile                    Standalone Next.js production image
 .github/workflows/ci.yml      Lint / typecheck / test / build
