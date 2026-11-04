@@ -74,7 +74,7 @@ export function AppShell({
         {subNav && subNav.length > 0 ? <SectionNav items={subNav} /> : null}
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-5 px-6 py-6">
+      <main className="lt-enter mx-auto max-w-6xl space-y-5 px-6 py-6">
         {!hidePageHeader ? (
           <div className="print:hidden">
             <h1 className="text-[22px] font-semibold tracking-tight text-[var(--lt-ink)]">

@@ -289,7 +289,7 @@ export function MemberForm({
             ))}
           </select>
         </label>
-        <label className="text-sm">
+        <label className="text-sm sm:col-span-2">
           Photo
           <input
             type="file"
@@ -299,14 +299,31 @@ export function MemberForm({
             className={`${inputClass} file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1`}
           />
         </label>
-        {initial?.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={initial.photoUrl}
-            alt="Current member photo"
-            className="h-28 w-28 rounded-md object-cover border border-slate-200"
-          />
-        ) : null}
+        <div className="sm:col-span-2 flex items-center gap-4">
+          {initial?.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={initial.photoUrl}
+              alt="Current member photo"
+              className="h-28 w-28 rounded-full object-cover border border-[var(--lt-line)]"
+            />
+          ) : (
+            <span
+              className="inline-flex h-28 w-28 items-center justify-center rounded-full border border-[var(--lt-line)] bg-[var(--lt-accent-soft)] text-2xl font-semibold text-[var(--lt-accent)]"
+              aria-label="No photo on file"
+            >
+              {[initial?.firstName?.[0], initial?.lastName?.[0]]
+                .filter(Boolean)
+                .join("")
+                .toUpperCase() || "?"}
+            </span>
+          )}
+          <p className="text-sm text-[var(--lt-muted)]">
+            {initial?.photoUrl
+              ? "Current photo. Upload a JPEG, PNG, or WebP (max 2MB) to replace it."
+              : "No photo yet — a calm initials placeholder is shown on the register until one is uploaded."}
+          </p>
+        </div>
       </section>
 
       {state && !state.ok ? (

@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+<<<<<<< HEAD
 import { DataTable, DataTableFilterBar } from "@/components/data-table";
+=======
+import { EmptyState } from "@/components/empty-state";
+import { MemberAvatar } from "@/components/member-avatar";
+>>>>>>> 99d7cc5 (Add UI liveliness via member photos, scenes, and subtle motion)
 import { MembersAppShell } from "@/components/members/app-shell";
 import { requireMembersAccess } from "@/lib/auth-guards";
 import { buildSearchParams, parsePageParams } from "@/lib/data-table";
 import { canWriteMembers } from "@/lib/roles";
-import { photoPublicUrl } from "@/lib/members/photos";
 import {
   listBranchesForUser,
   listCellsForBranches,
@@ -236,8 +240,78 @@ export default async function MembersListPage({
             default:
               return null;
           }
+<<<<<<< HEAD
         }}
       />
+=======
+          actionHref={writeOk ? "/members/new" : undefined}
+          actionLabel={writeOk ? "Register member" : undefined}
+        />
+      ) : (
+        <div className="lt-table-wrap">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-[var(--lt-line)] bg-[#f9fafb] text-[var(--lt-muted)]">
+              <tr>
+                <th className="px-3 py-2.5 font-medium">Member</th>
+                <th className="px-3 py-2.5 font-medium">Number</th>
+                <th className="px-3 py-2.5 font-medium">Branch</th>
+                <th className="px-3 py-2.5 font-medium">Groups</th>
+                <th className="px-3 py-2.5 font-medium">Status</th>
+                <th className="px-3 py-2.5 font-medium print:hidden"> </th>
+              </tr>
+            </thead>
+            <tbody>
+              {listed.members.map((m) => {
+                const groups = m.groups
+                  .map((g) => g.cell?.name ?? g.fellowshipMinistry?.name)
+                  .filter(Boolean)
+                  .join(", ");
+                return (
+                  <tr
+                    key={m.id}
+                    className="lt-row-hover border-b border-[var(--lt-line)]/70 last:border-0"
+                  >
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-3">
+                        <MemberAvatar
+                          photoKey={m.photoKey}
+                          firstName={m.firstName}
+                          lastName={m.lastName}
+                          size="md"
+                        />
+                        <span className="font-medium text-[var(--lt-ink)]">
+                          {m.lastName}, {m.firstName}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 text-[var(--lt-muted)]">
+                      {m.memberNumber}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {m.branch.name}
+                      {m.branch.isInternational ? (
+                        <span className="ml-1 text-xs text-[var(--lt-muted)]">
+                          (intl)
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-2.5 text-[var(--lt-muted)]">
+                      {groups || "—"}
+                    </td>
+                    <td className="px-3 py-2.5">{m.status}</td>
+                    <td className="px-3 py-2.5 print:hidden">
+                      <Link href={`/members/${m.id}`} className="lt-link">
+                        Open
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+>>>>>>> 99d7cc5 (Add UI liveliness via member photos, scenes, and subtle motion)
     </MembersAppShell>
   );
 }

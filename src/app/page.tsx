@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
+import { SceneBanner } from "@/components/scene-banner";
 import {
   accessModeLabel,
   roleLabel,
@@ -33,6 +34,12 @@ export default async function HomePage() {
       userName={session?.user?.name}
       active="home"
     >
+      <SceneBanner
+        scene="gathering"
+        density="strip"
+        caption="Ministry tools for your role — calm product chrome with real community imagery"
+      />
+
       <section className="lt-panel space-y-3 p-5">
         <h2 className="text-xs font-medium uppercase tracking-wide text-[var(--lt-muted)]">
           Signed in
@@ -92,21 +99,41 @@ export default async function HomePage() {
           </p>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
-            {surfaces.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="lt-panel block h-full p-4 hover:border-[var(--lt-accent)]"
-                >
-                  <span className="font-medium text-[var(--lt-ink)]">
-                    {item.label}
-                  </span>
-                  <span className="mt-1 block text-sm text-[var(--lt-muted)]">
-                    {item.description}
-                  </span>
-                </Link>
-              </li>
-            ))}
+            {surfaces.map((item) => {
+              const scene =
+                item.surface === "members"
+                  ? "community"
+                  : item.surface === "finance"
+                    ? "hands"
+                    : item.surface === "reports"
+                      ? "board"
+                      : item.surface === "admin"
+                        ? "workspace"
+                        : "gathering";
+              return (
+                <li key={item.href} className="lt-card-appear">
+                  <Link
+                    href={item.href}
+                    className="lt-panel block h-full overflow-hidden hover:border-[var(--lt-accent)]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/images/scenes/${scene}.jpg`}
+                      alt=""
+                      className="h-24 w-full object-cover"
+                    />
+                    <span className="block p-4">
+                      <span className="font-medium text-[var(--lt-ink)]">
+                        {item.label}
+                      </span>
+                      <span className="mt-1 block text-sm text-[var(--lt-muted)]">
+                        {item.description}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

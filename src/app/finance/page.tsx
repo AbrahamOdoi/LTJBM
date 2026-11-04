@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { MoneyCell } from "@/components/finance/money-cell";
+import { SceneBanner } from "@/components/scene-banner";
 import { obligationKindLabel } from "@/lib/church-labels";
 import { getBalanceRollup, listCollectionBatches } from "@/lib/finance/service";
 import { canWriteFinance } from "@/lib/roles";
@@ -28,6 +29,12 @@ export default async function FinancePage() {
             : " — your account is read-only here."}
         </p>
       </div>
+
+      <SceneBanner
+        scene="hands"
+        density="strip"
+        caption="Head Office contributions — expected, paid, and outstanding"
+      />
 
       <section className="grid gap-4 sm:grid-cols-3">
         <SummaryTile label="Expected" value={rollup.totals.expected} />
@@ -112,7 +119,7 @@ function SummaryTile({
   emphasize?: "ok" | "warn";
 }) {
   return (
-    <div className="lt-panel p-4">
+    <div className="lt-panel lt-card-appear p-4">
       <p className="text-sm text-[var(--lt-muted)]">{label}</p>
       <p className="mt-1 text-2xl font-semibold tracking-tight">
         <MoneyCell value={value} emphasize={emphasize} />

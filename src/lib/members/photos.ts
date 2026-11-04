@@ -8,6 +8,10 @@ const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export function photoPublicUrl(photoKey: string | null | undefined): string | null {
   if (!photoKey) return null;
+  // Seeded demo placeholders live under public/images/avatars (tracked, non-PII).
+  if (photoKey.startsWith("demo-")) {
+    return `/images/avatars/${photoKey}`;
+  }
   return `/uploads/members/${photoKey}`;
 }
 
