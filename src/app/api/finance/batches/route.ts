@@ -4,15 +4,32 @@ import {
   withFinanceWrite,
 } from "@/app/api/finance/_guard";
 import { requireFinanceWrite } from "@/lib/auth-guards";
+import { parsePageParams } from "@/lib/data-table";
 import {
   createCollectionBatch,
   listCollectionBatches,
 } from "@/lib/finance/service";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   return withFinanceAccess(async () => {
-    const batches = await listCollectionBatches();
-    return NextResponse.json({ batches });
+    const params = request.nextUrl.searchParams;
+    const { page, pageSize } = parsePageParams({
+      page: params.get("page") ?? undefined,
+      pageSize: params.get("pageSize") ?? undefined,
+    });
+    const listed = await listCollectionBatches({
+      q: params.get("q") ?? undefined,
+      variance: params.get("variance") ?? undefined,
+      page,
+      pageSize,
+    });
+    return NextResponse.json({
+      batches: listed.items,
+      total: listed.total,
+      page: listed.page,
+      pageSize: listed.pageSize,
+      pageCount: listed.pageCount,
+    });
   });
 }
 

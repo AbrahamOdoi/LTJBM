@@ -10,18 +10,43 @@ import { createPayment } from "@/lib/finance/service";
 
 export async function GET(request: NextRequest) {
   return withFinanceAccess(async () => {
-    const obligationId = request.nextUrl.searchParams.get("obligationId");
-    const batchId = request.nextUrl.searchParams.get("batchId");
-    const payments = await prisma.payment.findMany({
-      where: {
-        obligationId: obligationId ?? undefined,
-        batchId: batchId ?? undefined,
-      },
-      orderBy: { paidAt: "desc" },
-      take: 200,
-    });
+    const params = request.nextUrl.searchParams;
+    const obligationId = params.get("obligationId");
+    const batchId = params.get("batchId");
+    const q = params.get("q")?.trim();
+    const page = Math.max(1, Number.parseInt(params.get("page") ?? "1", 10) || 1);
+    const pageSize = Math.min(
+      100,
+      Math.max(1, Number.parseInt(params.get("pageSize") ?? "25", 10) || 25),
+    );
+    const where = {
+      obligationId: obligationId ?? undefined,
+      batchId: batchId ?? undefined,
+      ...(q
+        ? {
+            OR: [
+              { reference: { contains: q, mode: "insensitive" as const } },
+              { method: { contains: q, mode: "insensitive" as const } },
+              { notes: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    };
+    const [payments, total] = await Promise.all([
+      prisma.payment.findMany({
+        where,
+        orderBy: { paidAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.payment.count({ where }),
+    ]);
     return NextResponse.json({
       payments: payments.map(serializePayment),
+      total,
+      page,
+      pageSize,
+      pageCount: Math.max(1, Math.ceil(total / pageSize) || 1),
     });
   });
 }

@@ -15,10 +15,11 @@ export default async function ObligationDetailPage({ params }: Params) {
   const { id } = await params;
   const session = await auth();
   const canWrite = canWriteFinance(session?.user?.role);
-  const [obligation, batches] = await Promise.all([
+  const [obligation, batchPage] = await Promise.all([
     getObligation(id),
-    listCollectionBatches(),
+    listCollectionBatches({ page: 1, pageSize: 100 }),
   ]);
+  const batches = batchPage.items;
 
   if (!obligation) notFound();
 

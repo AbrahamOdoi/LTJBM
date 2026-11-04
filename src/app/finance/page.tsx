@@ -8,11 +8,11 @@ import Link from "next/link";
 export default async function FinancePage() {
   const session = await auth();
   const role = session?.user?.role;
-  const [rollup, batches] = await Promise.all([
+  const [rollup, varianceBatches] = await Promise.all([
     getBalanceRollup({}),
-    listCollectionBatches(),
+    listCollectionBatches({ variance: "open", page: 1, pageSize: 1 }),
   ]);
-  const openVariances = batches.filter((b) => b.hasVariance);
+  const openVarianceCount = varianceBatches.total;
 
   return (
     <div className="space-y-8">
@@ -82,11 +82,9 @@ export default async function FinancePage() {
         <Link href="/finance/obligations" className="lt-btn-primary">
           Pledges &amp; obligations
         </Link>
-        <Link href="/finance/batches" className="lt-btn-secondary">
+        <Link href="/finance/batches?variance=open" className="lt-btn-secondary">
           Saturday collection batches
-          {openVariances.length > 0
-            ? ` (${openVariances.length} variance)`
-            : ""}
+          {openVarianceCount > 0 ? ` (${openVarianceCount} variance)` : ""}
         </Link>
         <Link href="/finance/arrears" className="lt-btn-secondary">
           Dues arrears
