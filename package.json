@@ -13,6 +13,8 @@
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "test:finance": "tsx --test src/lib/finance/*.test.ts",
+    "test:reporting": "tsx --test src/lib/reporting/*.test.ts",
+    "report:monthly": "tsx scripts/send-board-report.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

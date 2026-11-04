@@ -1,5 +1,14 @@
 import { auth } from "@/auth";
-import { canAccessFinance, canWriteFinance, type Role } from "@/lib/roles";
+import {
+  canAccessAdmin,
+  canAccessFinance,
+  canAccessMembers,
+  canAccessReporting,
+  canEditReportTemplates,
+  canWriteFinance,
+  canWriteMembers,
+  type Role,
+} from "@/lib/roles";
 
 export class AuthGuardError extends Error {
   status: number;
@@ -41,10 +50,62 @@ export async function requireFinanceWrite() {
   return session;
 }
 
+export async function requireReportingAccess() {
+  const session = await requireSession();
+  if (!canAccessReporting(session.user.role)) {
+    throw new AuthGuardError(
+      "Reporting access denied. Aggregated Board/Council views are role-gated.",
+      403,
+    );
+  }
+  return session;
+}
+
+export async function requireReportTemplateEdit() {
+  const session = await requireSession();
+  if (!canEditReportTemplates(session.user.role)) {
+    throw new AuthGuardError(
+      "Report template edit denied. Admin / Data Centre only.",
+      403,
+    );
+  }
+  return session;
+}
+
+export async function requireMembersAccess() {
+  const session = await requireSession();
+  if (!canAccessMembers(session.user.role)) {
+    throw new AuthGuardError("Members access denied.", 403);
+  }
+  return session;
+}
+
+export async function requireMembersWrite() {
+  const session = await requireMembersAccess();
+  if (!canWriteMembers(session.user.role)) {
+    throw new AuthGuardError(
+      "Members write denied. Board/Council roles are read-only for biodata.",
+      403,
+    );
+  }
+  return session;
+}
+
 export async function requireRoles(...roles: Role[]) {
   const session = await requireSession();
   if (!roles.includes(session.user.role)) {
     throw new AuthGuardError("Insufficient role", 403);
+  }
+  return session;
+}
+
+export async function requireAdmin() {
+  const session = await requireSession();
+  if (!canAccessAdmin(session.user.role)) {
+    throw new AuthGuardError(
+      "Admin / Data Centre access denied. Only Admin may open the admin console.",
+      403,
+    );
   }
   return session;
 }

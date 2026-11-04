@@ -1,4 +1,8 @@
-import { PrismaClient, type Role } from "@prisma/client";
+import {
+  PrismaClient,
+  type HouseholdRelation,
+  type Role,
+} from "@prisma/client";
 import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -41,6 +45,377 @@ const demoUsers: Array<{
     role: "LeadershipCouncil",
   },
 ];
+
+const FIRST_NAMES = [
+  "Kwame",
+  "Ama",
+  "Kofi",
+  "Akosua",
+  "Yaw",
+  "Abena",
+  "Kojo",
+  "Efua",
+  "Kwesi",
+  "Adwoa",
+  "Fiifi",
+  "Afua",
+  "Nana",
+  "Esi",
+  "Kwabena",
+  "Akua",
+  "Joseph",
+  "Grace",
+  "Samuel",
+  "Ruth",
+  "Daniel",
+  "Hannah",
+  "Emmanuel",
+  "Mercy",
+  "Isaac",
+  "Patience",
+  "David",
+  "Comfort",
+  "Michael",
+  "Joyce",
+  "Peter",
+  "Esther",
+  "James",
+  "Priscilla",
+  "John",
+  "Deborah",
+  "Francis",
+  "Mary",
+  "Benjamin",
+  "Sarah",
+];
+
+const LAST_NAMES = [
+  "Mensah",
+  "Asante",
+  "Owusu",
+  "Boateng",
+  "Osei",
+  "Agyeman",
+  "Appiah",
+  "Darko",
+  "Addo",
+  "Nkrumah",
+  "Amoah",
+  "Sarpong",
+  "Tetteh",
+  "Quaye",
+  "Adjei",
+  "Frimpong",
+  "Ansah",
+  "Ofori",
+  "Baffoe",
+  "Gyamfi",
+];
+
+const REGIONS = ["Greater Accra", "Ashanti", "Eastern", "Central", "Volta"];
+const CITIES = ["Accra", "Tema", "Kumasi", "Madina", "Legon", "Kasoa"];
+
+function pick<T>(arr: T[], i: number): T {
+  return arr[i % arr.length]!;
+}
+
+function phoneFor(i: number) {
+  return `+23324${String(1000000 + i).slice(-7)}`;
+}
+
+async function seedMembers() {
+  const branches = await prisma.branch.findMany();
+  const hq = branches.find((b) => b.code === "HQ-ACCRA")!;
+  const east = branches.find((b) => b.code === "GH-EAST-LEGON")!;
+  const london = branches.find((b) => b.code === "INT-LONDON")!;
+  const fellowships = await prisma.fellowshipMinistry.findMany();
+
+  const cellDefs = [
+    { branchId: hq.id, name: "HQ Cell Alpha" },
+    { branchId: hq.id, name: "HQ Cell Beta" },
+    { branchId: east.id, name: "East Legon Cell 1" },
+    { branchId: east.id, name: "East Legon Cell 2" },
+    { branchId: east.id, name: "East Legon Youth Cell" },
+    { branchId: london.id, name: "London Cell North" },
+    { branchId: london.id, name: "London Cell South" },
+  ];
+
+  const cells = [];
+  for (const def of cellDefs) {
+    const cell = await prisma.cell.upsert({
+      where: { branchId_name: { branchId: def.branchId, name: def.name } },
+      update: {},
+      create: def,
+    });
+    cells.push(cell);
+  }
+
+  const existingCount = await prisma.member.count();
+  if (existingCount >= 100) {
+    console.log(`Members already seeded (${existingCount}); skipping biodata bulk.`);
+    return;
+  }
+
+  const target = 120;
+  const branchCycle = [east, hq, east, london, east, hq];
+  let created = 0;
+
+  for (let i = 0; i < target; i++) {
+    const branch = pick(branchCycle, i);
+    const firstName = pick(FIRST_NAMES, i);
+    const lastName = pick(LAST_NAMES, i * 3 + 1);
+    const gender = i % 2 === 0 ? "Male" : "Female";
+    const fellowship = pick(
+      fellowships,
+      gender === "Male" ? (i % 2 === 0 ? 0 : 2) : i % 3 === 0 ? 3 : 1,
+    );
+    const branchCells = cells.filter((c) => c.branchId === branch.id);
+    const cell = pick(branchCells, i);
+    const year = 2024;
+    const memberNumber = `${branch.code}-${year}-${String(i + 1).padStart(4, "0")}`;
+
+    const dob = new Date(Date.UTC(1965 + (i % 35), i % 12, (i % 27) + 1));
+    const householdName =
+      i % 5 === 0 ? `${lastName} Household` : i % 5 === 1 ? `${lastName} Family` : null;
+    const relation: HouseholdRelation =
+      i % 5 === 0 ? "Head" : i % 5 === 1 ? "Spouse" : "Other";
+
+    const member = await prisma.member.create({
+      data: {
+        memberNumber,
+        firstName,
+        lastName,
+        otherNames: i % 7 === 0 ? "Nana" : null,
+        dateOfBirth: dob,
+        gender,
+        phone: phoneFor(i),
+        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@example.ltjbm.local`,
+        addressLine1: `${10 + (i % 80)} Faith Avenue`,
+        city: branch.isInternational ? "London" : pick(CITIES, i),
+        region: branch.isInternational ? "England" : pick(REGIONS, i),
+        country: branch.country,
+        status: i % 37 === 0 ? "Inactive" : "Active",
+        branchId: branch.id,
+      },
+    });
+
+    await prisma.groupMembership.create({
+      data: { memberId: member.id, kind: "Cell", cellId: cell.id },
+    });
+    await prisma.groupMembership.create({
+      data: {
+        memberId: member.id,
+        kind: "Fellowship",
+        fellowshipMinistryId: fellowship.id,
+      },
+    });
+
+    if (householdName) {
+      const household = await prisma.household.create({
+        data: { name: householdName },
+      });
+      await prisma.householdMember.create({
+        data: {
+          householdId: household.id,
+          memberId: member.id,
+          relation,
+        },
+      });
+
+      // Pair spouse into same household for a subset.
+      if (relation === "Head" && i + 1 < target) {
+        // spouse created on next iteration separately; link later via index map if needed
+      }
+    }
+
+    await prisma.memberStatusHistory.create({
+      data: {
+        memberId: member.id,
+        fromStatus: null,
+        toStatus: "Active",
+        toBranchId: branch.id,
+        reason: "Seed registration",
+      },
+    });
+
+    created += 1;
+  }
+
+  // Link a few household pairs (Head + Spouse).
+  const heads = await prisma.householdMember.findMany({
+    where: { relation: "Head" },
+    take: 20,
+    include: { household: true, member: true },
+  });
+  for (let i = 0; i < Math.min(15, heads.length); i++) {
+    const head = heads[i]!;
+    const spouse = await prisma.member.findFirst({
+      where: {
+        id: { not: head.memberId },
+        lastName: head.member.lastName,
+        households: { none: {} },
+        branchId: head.member.branchId,
+      },
+    });
+    if (!spouse) continue;
+    await prisma.householdMember.create({
+      data: {
+        householdId: head.householdId,
+        memberId: spouse.id,
+        relation: "Spouse",
+      },
+    });
+  }
+
+  // One intentional near-duplicate pending candidate for demo review UI.
+  const sample = await prisma.member.findFirst({
+    where: { branchId: east.id, status: "Active" },
+    orderBy: { memberNumber: "asc" },
+  });
+  if (sample) {
+    const dup = await prisma.member.create({
+      data: {
+        memberNumber: `${east.code}-2024-DUPL`,
+        firstName: sample.firstName,
+        lastName: sample.lastName,
+        dateOfBirth: sample.dateOfBirth,
+        phone: sample.phone,
+        gender: sample.gender,
+        city: sample.city,
+        country: sample.country,
+        status: "Active",
+        branchId: east.id,
+      },
+    });
+    await prisma.duplicateCandidate.create({
+      data: {
+        memberAId: sample.id < dup.id ? sample.id : dup.id,
+        memberBId: sample.id < dup.id ? dup.id : sample.id,
+        score: 1,
+        reasons: [
+          "Exact phone match",
+          "Exact name match",
+          "Name + date of birth match",
+        ],
+        status: "Pending",
+      },
+    });
+    created += 1;
+  }
+
+  console.log(`Seeded ${created} members (total biodata demo ≥100).`);
+}
+
+async function seedDomainLists() {
+  const domains: Array<{
+    key: string;
+    label: string;
+    description: string;
+    values: Array<{
+      value: string;
+      label: string;
+      sortOrder: number;
+      parentValue?: string;
+    }>;
+  }> = [
+    {
+      key: "gender",
+      label: "Gender",
+      description: "Member biodata gender dropdown",
+      values: [
+        { value: "Male", label: "Male", sortOrder: 1 },
+        { value: "Female", label: "Female", sortOrder: 2 },
+        { value: "Other", label: "Other / prefer not to say", sortOrder: 3 },
+      ],
+    },
+    {
+      key: "member_status",
+      label: "Member status",
+      description: "Status labels for data-entry portal",
+      values: [
+        { value: "Active", label: "Active", sortOrder: 1 },
+        { value: "Inactive", label: "Inactive", sortOrder: 2 },
+        { value: "Transferred", label: "Transferred", sortOrder: 3 },
+        { value: "Suspended", label: "Suspended", sortOrder: 4 },
+        { value: "Deceased", label: "Deceased", sortOrder: 5 },
+      ],
+    },
+    {
+      key: "payment_method",
+      label: "Payment method",
+      description: "HQ finance entry methods (portal dropdown)",
+      values: [
+        { value: "Cash", label: "Cash", sortOrder: 1 },
+        { value: "MobileMoney", label: "Mobile Money", sortOrder: 2 },
+        { value: "BankTransfer", label: "Bank transfer", sortOrder: 3 },
+        { value: "Cheque", label: "Cheque", sortOrder: 4 },
+      ],
+    },
+    {
+      key: "ghana_region",
+      label: "Ghana regions",
+      description: "Location dropdown with example subdomain districts",
+      values: [
+        { value: "GreaterAccra", label: "Greater Accra", sortOrder: 1 },
+        { value: "Ashanti", label: "Ashanti", sortOrder: 2 },
+        { value: "Eastern", label: "Eastern", sortOrder: 3 },
+        {
+          value: "AccraMetro",
+          label: "Accra Metro",
+          sortOrder: 10,
+          parentValue: "GreaterAccra",
+        },
+        {
+          value: "Tema",
+          label: "Tema",
+          sortOrder: 11,
+          parentValue: "GreaterAccra",
+        },
+        {
+          value: "KumasiMetro",
+          label: "Kumasi Metro",
+          sortOrder: 20,
+          parentValue: "Ashanti",
+        },
+      ],
+    },
+  ];
+
+  for (const domain of domains) {
+    const list = await prisma.domainList.upsert({
+      where: { key: domain.key },
+      update: { label: domain.label, description: domain.description },
+      create: {
+        key: domain.key,
+        label: domain.label,
+        description: domain.description,
+      },
+    });
+
+    for (const v of domain.values) {
+      await prisma.domainListValue.upsert({
+        where: {
+          domainListId_value: { domainListId: list.id, value: v.value },
+        },
+        update: {
+          label: v.label,
+          sortOrder: v.sortOrder,
+          parentValue: v.parentValue ?? null,
+          isActive: true,
+        },
+        create: {
+          domainListId: list.id,
+          value: v.value,
+          label: v.label,
+          sortOrder: v.sortOrder,
+          parentValue: v.parentValue ?? null,
+        },
+      });
+    }
+  }
+
+  console.log(`Seeded ${domains.length} admin domain lists.`);
+}
 
 async function main() {
   const passwordHash = await hash(SEED_PASSWORD, 12);
@@ -144,7 +519,11 @@ async function main() {
     }
   }
 
-  // ── Finance demo slice (minimal members; full ≥100 biodata is Members-owned)
+  // Members-owned ≥100 biodata seed
+  await seedMembers();
+  await seedDomainLists();
+
+  // ── Finance demo slice (minimal FIN-* members; full biodata is Members-owned)
   const cell = await prisma.cell.upsert({
     where: { branchId_name: { branchId: eastLegon.id, name: "Cell A" } },
     update: {},
@@ -387,25 +766,90 @@ async function main() {
   // Keep duesArrears with zero payments for arrears query
   void duesArrears;
 
+  // ── Reporting: Board template + monthly schedule (Reporting-owned)
+  const boardLayout = {
+    title: "Pastoral Board — Expected / Paid / Outstanding",
+    audience: "Both",
+    fields: [
+      { id: "f-expected", label: "Expected", source: "totals.expected" },
+      { id: "f-paid", label: "Paid", source: "totals.paid" },
+      { id: "f-outstanding", label: "Outstanding", source: "totals.outstanding" },
+      { id: "f-by-kind", label: "By obligation kind", source: "byKind" },
+    ],
+    charts: [
+      {
+        id: "c-kind-paid",
+        type: "bar",
+        title: "Paid by kind",
+        metric: "paid",
+        groupBy: "kind",
+      },
+    ],
+  };
+
+  let boardTemplate = await prisma.reportTemplate.findFirst({
+    where: { name: "Board monthly rollup" },
+  });
+  if (boardTemplate) {
+    boardTemplate = await prisma.reportTemplate.update({
+      where: { id: boardTemplate.id },
+      data: {
+        description:
+          "Default Pastoral Board / Leadership Council Expected·Paid·Outstanding template",
+        layout: boardLayout,
+        isActive: true,
+      },
+    });
+  } else {
+    boardTemplate = await prisma.reportTemplate.create({
+      data: {
+        name: "Board monthly rollup",
+        description:
+          "Default Pastoral Board / Leadership Council Expected·Paid·Outstanding template",
+        layout: boardLayout,
+        isActive: true,
+      },
+    });
+  }
+
+  const existingSchedule = await prisma.reportSchedule.findFirst({
+    where: { reportTemplateId: boardTemplate.id },
+  });
+  if (!existingSchedule) {
+    await prisma.reportSchedule.create({
+      data: {
+        reportTemplateId: boardTemplate.id,
+        cronExpression: "0 8 1 * *",
+        distributionList: ["board@ltjbm.local", "council@ltjbm.local"],
+        isActive: true,
+      },
+    });
+  }
+
   await prisma.auditLog.create({
     data: {
       action: "system.seed",
       entityType: "System",
       metadata: {
-        message: "Phase A platform + finance seed completed",
+        message:
+          "Phase A platform + members + finance + reporting + admin seed completed",
         hqBranchId: hq.id,
         financeDemoMembers: financeMembers.map((m) => m.memberNumber),
+        boardTemplateId: boardTemplate.id,
       },
     },
   });
 
+  const memberCount = await prisma.member.count();
   console.log("Seed complete.");
+  console.log(`Member count: ${memberCount}`);
   console.log(`Default password for demo users: ${SEED_PASSWORD}`);
   console.log("Demo users:");
   for (const u of demoUsers) {
     console.log(`  - ${u.email} (${u.role})`);
   }
   console.log("Finance demo members: FIN-001, FIN-002, FIN-003");
+  console.log(`Board report template: ${boardTemplate.name} (${boardTemplate.id})`);
 }
 
 main()

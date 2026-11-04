@@ -2,29 +2,33 @@
 
 Church Database Management System for **Living Testimonies for Jesus Bible Ministry (LTJBM)**.
 
-Phase A platform foundation (Platform / Auth workstream):
+Phase A/B foundation:
 
 - Next.js App Router + TypeScript + Tailwind
-- PostgreSQL + Prisma schema skeleton (org, members, finance, auth, audit, reporting config)
+- PostgreSQL + Prisma schema (org, members, finance, auth, audit, reporting config, domains)
 - Auth.js (NextAuth v5) credential sessions with roles
-- Middleware / route guards: HQ-only finance; RecordsClerk denied finance
+- Middleware / route guards: HQ-only finance; Admin-only `/admin`; RecordsClerk denied finance
 - Audit log plumbing (`writeAuditLog`)
 - Docker Compose for local Postgres
+- **Members / Biodata:** register/update, household, cells & fellowships, photo upload, deterministic duplicates, status history, Ghana→international transfer, individual/group print, ≥100 seeded members
+- **Admin / Migration:** domains/dropdowns/subdomains, user/role admin, member CSV/JSON export, logical backup snapshot + `docs/backup-restore.md`
 
-Finance Phase A (HQ) is implemented on this codebase: obligations, payments,
-Saturday batch variance, dues arrears, and Expected/Paid/Outstanding APIs.
-Board dashboards/templates remain Reporting-owned.
+Finance Phase A (HQ): obligations, payments, Saturday batch variance, dues
+arrears, and Expected/Paid/Outstanding APIs.
+
+Reporting Phase A/B: Board/Council live dashboards, monthly Board email
+(demo file output), and Admin/Data Centre live report-template edit.
 
 ## Roles
 
 | Role | Notes |
 | --- | --- |
-| `RecordsClerk` | Biodata only — **no finance** routes or APIs |
-| `BranchLeader` | Scoped to assigned branch(es); no finance by default |
-| `FinancialSecretary` | HQ finance read/write |
-| `PastoralBoard` | Aggregated finance read |
-| `LeadershipCouncil` | Aggregated finance read |
-| `Admin` | Full access |
+| `RecordsClerk` | Biodata only — **no finance / reporting** |
+| `BranchLeader` | Scoped to assigned branch(es); no finance/reporting by default |
+| `FinancialSecretary` | HQ finance read/write; may view reports |
+| `PastoralBoard` | Aggregated Board dashboard (kind rollups) |
+| `LeadershipCouncil` | Aggregated Council dashboard (+ branch/period) |
+| `Admin` | Full access incl. report template edit |
 
 ## Prerequisites
 
@@ -74,10 +78,33 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 
 ### Quick RBAC checks
 
-1. Sign in as `clerk@ltjbm.local` → open `/finance` → redirected to `/forbidden?reason=finance`
+1. Sign in as `clerk@ltjbm.local` → open `/finance` → redirected to `/forbidden?reason=finance`; `/reports` → `/forbidden?reason=reporting`
 2. Sign in as `finance@ltjbm.local` → `/finance` loads; `GET /api/finance/health` returns `{ ok: true }`
-3. Finance HQ screens: `/finance/obligations`, `/finance/batches`, `/finance/arrears`
-4. Reporting consume contract: `GET /api/finance/balances` (Expected / Paid / Outstanding by kind)
+3. Sign in as `clerk@ltjbm.local` → `/members` full register/update/transfer/print
+4. Sign in as `branch@ltjbm.local` → `/members` scoped to East Legon only
+5. Finance HQ screens: `/finance/obligations`, `/finance/batches`, `/finance/arrears`
+6. Reporting consume contract: `GET /api/finance/balances` (Expected / Paid / Outstanding by kind)
+7. Sign in as `board@ltjbm.local` → `/reports` shows kind rollups (auto-refresh after payments)
+8. Sign in as `council@ltjbm.local` → `/reports` also shows branch + period breakdowns
+9. Sign in as `admin@ltjbm.local` → `/reports/templates` add field/chart; `/reports/schedules` run email
+10. Sign in as `admin@ltjbm.local` → `/admin` domains/users/export/backup; clerk hitting `/admin` → forbidden
+11. Admin: download `/api/admin/export/members?format=csv` and logical backup snapshot
+
+### Monthly Board email (demo)
+
+```bash
+# Writes HTML under ./tmp/board-reports (or REPORT_EMAIL_DIR)
+npm run report:monthly
+
+# Or as Admin in the UI: /reports/schedules → "Run monthly Board email now"
+# Or cron:
+#   curl -X POST -H "Authorization: Bearer $REPORT_CRON_SECRET" \
+#     -H "Content-Type: application/json" \
+#     http://localhost:3000/api/reports/schedules/run
+```
+
+Default schedule cron: `0 8 1 * *` (08:00 on the 1st) to `board@ltjbm.local` + `council@ltjbm.local`.
+`REPORT_EMAIL_MODE=file` (default) is demo-friendly; set `console` to print instead of writing a file.
 
 ## Useful scripts
 
@@ -89,31 +116,44 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 | `npm run db:seed` | Seed roles/org/demo users |
 | `npm run db:studio` | Prisma Studio |
 | `npm run test:finance` | Finance balance / batch variance unit tests |
+| `npm run test:reporting` | Report template layout unit tests |
+| `npm run report:monthly` | Generate monthly Board email artifact |
 | `npx prisma generate` | Regenerate Prisma Client |
 
 ## Layout (key paths)
 
 ```
 prisma/schema.prisma          Domain + auth/audit skeleton
-prisma/seed.ts                Demo users, branches, obligation types
+prisma/seed.ts                Demo users, branches, ≥100 members, obligation types, Board template
 src/auth.ts                   Auth.js + Credentials provider
-src/auth.config.ts            Edge middleware + finance gate
+src/auth.config.ts            Edge middleware + finance/reporting gates
 src/middleware.ts             NextAuth middleware entry
 src/lib/roles.ts              Role matrix helpers
 src/lib/audit.ts              Audit log writer
 src/lib/auth-guards.ts        Server/API guards
+src/lib/members/              Biodata access, duplicates, photos, actions
 src/lib/finance/              Balance math, batches, arrears, service
+src/lib/reporting/            Dashboard aggregates, templates, Board email
+src/lib/admin/                Domains, users, export, logical backup helpers
+src/app/members/              Clerk/Branch member UI + print
 src/app/finance/              HQ Financial Secretary / Admin UI
+src/app/reports/              Board/Council dashboards + template/schedule UI
+src/app/admin/                Admin / Data Centre console
 src/app/api/finance/          HQ finance APIs (RBAC gated)
+src/app/api/reports/          Reporting APIs (aggregates read + template edit)
+src/app/api/admin/            Member export + backup snapshot (Admin-only)
 src/components/finance/       Finance forms
+src/components/reporting/     Dashboard live refresh, template editor
+docs/backup-restore.md        Section 8 restore narrative (pg_dump/restore)
 docker-compose.yml            Local Postgres 16
+public/uploads/members/       Local photo storage (demo)
 ```
 
 ## Workstream boundaries
 
 - **Platform / Auth** — this bootstrap, RBAC, audit plumbing
-- **Members / Biodata** — member CRUD, household, photos, duplicates, transfers
-- **Finance** — obligations, payments, Saturday batch, arrears
-- **Reporting** — Board rollups, schedules, template edit
-- **Admin / Migration** — domains, user admin, export/backup
+- **Members / Biodata** — member CRUD, household, photos, duplicates, transfers, print, seed biodata
+- **Finance** — obligations, payments, Saturday batch, arrears (write path)
+- **Reporting** — Board rollups, schedules, template edit (reads aggregates only)
+- **Admin / Migration** — domains, user admin, export/backup narrative (import = Phase C)
 - **QA / Demo** — Section 8 script and seeded demo DB

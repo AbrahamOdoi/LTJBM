@@ -1,12 +1,22 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { SignOutButton } from "@/components/sign-out-button";
-import { canAccessFinance } from "@/lib/roles";
+import {
+  canAccessAdmin,
+  canAccessFinance,
+  canAccessMembers,
+  canAccessReporting,
+  canWriteMembers,
+} from "@/lib/roles";
 
 export default async function HomePage() {
   const session = await auth();
   const role = session?.user?.role;
   const financeOk = canAccessFinance(role);
+  const reportingOk = canAccessReporting(role);
+  const membersOk = canAccessMembers(role);
+  const membersWrite = canWriteMembers(role);
+  const adminOk = canAccessAdmin(role);
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#e2e8f0_100%)] text-slate-900">
@@ -17,12 +27,12 @@ export default async function HomePage() {
               LTJBM CDMS
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-              Platform shell
+              Church database
             </h1>
             <p className="mt-2 text-slate-600 text-sm leading-relaxed max-w-xl">
-              Phase A foundation: Auth.js sessions, Prisma schema skeleton,
-              HQ finance route guards, and audit log plumbing. Finance HQ
-              posting is live; Board dashboards remain Reporting-owned.
+              Phase A/B: platform auth, Members / biodata, HQ finance posting,
+              Board/Council reporting, and Admin / Data Centre console (domains,
+              users, export, backup narrative).
             </p>
           </div>
           <SignOutButton />
@@ -49,6 +59,12 @@ export default async function HomePage() {
               <dt className="text-slate-500">Finance access</dt>
               <dd className="font-medium">{financeOk ? "Allowed" : "Denied"}</dd>
             </div>
+            <div>
+              <dt className="text-slate-500">Reporting access</dt>
+              <dd className="font-medium">
+                {reportingOk ? "Allowed" : "Denied"}
+              </dd>
+            </div>
           </dl>
         </section>
 
@@ -57,6 +73,32 @@ export default async function HomePage() {
             Surfaces
           </h2>
           <ul className="space-y-2 text-sm">
+            {membersOk ? (
+              <li>
+                <Link
+                  href="/members"
+                  className="text-sky-800 hover:underline font-medium"
+                >
+                  /members
+                </Link>
+                <span className="text-slate-500">
+                  {" "}
+                  — member register
+                  {membersWrite ? ", update, transfer, print" : " (read)"}
+                </span>
+              </li>
+            ) : null}
+            {membersWrite ? (
+              <li>
+                <Link
+                  href="/members/new"
+                  className="text-sky-800 hover:underline font-medium"
+                >
+                  /members/new
+                </Link>
+                <span className="text-slate-500"> — register with duplicate checks</span>
+              </li>
+            ) : null}
             <li>
               <Link
                 href="/finance"
@@ -69,6 +111,32 @@ export default async function HomePage() {
                 — HQ finance (obligations, batches, arrears)
               </span>
             </li>
+            <li>
+              <Link
+                href="/reports"
+                className="text-sky-800 hover:underline font-medium"
+              >
+                /reports
+              </Link>
+              <span className="text-slate-500">
+                {" "}
+                — Board / Council Expected · Paid · Outstanding
+              </span>
+            </li>
+            {adminOk ? (
+              <li>
+                <Link
+                  href="/admin"
+                  className="text-sky-800 hover:underline font-medium"
+                >
+                  /admin
+                </Link>
+                <span className="text-slate-500">
+                  {" "}
+                  — domains, users, export, backup
+                </span>
+              </li>
+            ) : null}
             <li>
               <span className="font-medium text-slate-800">/api/finance/health</span>
               <span className="text-slate-500">
