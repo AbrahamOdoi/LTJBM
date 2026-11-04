@@ -286,10 +286,16 @@ async function main() {
       clerkAdmin.status === 307 ||
       clerkAdmin.status === 302 ||
       isRedirectTo(clerkAdmin.location, "/forbidden?reason=admin");
-    const clerkReportsDenied =
-      clerkReports.status === 307 ||
-      clerkReports.status === 302 ||
-      isRedirectTo(clerkReports.location, "/forbidden?reason=reporting");
+    // Post #18: Clerk/Branch may open membership Reports (not finance aggregates).
+    const clerkReportsOk = clerkReports.status === 200;
+    const clerkDash = await req(clerk, "GET", "/api/reports/dashboard");
+    const clerkMembershipOnly =
+      clerkDash.status === 200 &&
+      ((clerkDash.json as { profile?: string; view?: string } | null)?.profile ===
+        "membership" ||
+        (clerkDash.json as { profile?: string; view?: string } | null)?.view ===
+          "membership") &&
+      !(clerkDash.json as { finance?: unknown } | null)?.finance;
     const branchFinanceDenied =
       branchFinance.status === 307 ||
       branchFinance.status === 302 ||
@@ -310,13 +316,14 @@ async function main() {
       clerkFinanceDenied &&
         clerkFinanceApi.status === 403 &&
         clerkAdminDenied &&
-        clerkReportsDenied &&
+        clerkReportsOk &&
+        clerkMembershipOnly &&
         branchMembers.status === 200 &&
         branchFinanceDenied &&
         boardFinanceDenied &&
         boardReports.status === 200 &&
         healthOk,
-      `clerk finance→forbidden, api 403; admin/reports deny; branch members OK + finance deny; board /finance deny (${boardFinance.status}), /reports ${boardReports.status}; finance health ok=${healthOk}`,
+      `clerk finance→forbidden, api 403, admin deny; clerk membership reports ${clerkReports.status} profile-ok=${clerkMembershipOnly}; branch members OK + finance deny; board /finance deny (${boardFinance.status}), /reports ${boardReports.status}; finance health ok=${healthOk}`,
     );
   }
 
@@ -688,10 +695,30 @@ async function main() {
     );
   }
 
-  // Capture board paid before payment for S8-09
+  // Capture board paid before payment for S8-09 (role dashboard KPIs post #18)
+  type DashKpi = { id?: string; label?: string; value?: number };
+  type RoleDash = {
+    kpis?: DashKpi[];
+    totals?: { paid?: number; expected?: number };
+    finance?: {
+      byKind?: {
+        kind: string;
+        expected: number;
+        paid: number;
+        outstanding: number;
+      }[];
+      totals?: { expected?: number; paid?: number; outstanding?: number };
+    };
+  };
+  const kpiValue = (dash: RoleDash | null, id: string): number | null => {
+    const hit = dash?.kpis?.find((k) => k.id === id);
+    return typeof hit?.value === "number" ? hit.value : null;
+  };
   const dashBefore = await req(board, "GET", "/api/reports/dashboard");
   const paidBefore =
-    (dashBefore.json as { totals?: { paid: number } } | null)?.totals?.paid ??
+    kpiValue(dashBefore.json as RoleDash | null, "paid") ??
+    (dashBefore.json as RoleDash | null)?.totals?.paid ??
+    (dashBefore.json as RoleDash | null)?.finance?.totals?.paid ??
     null;
 
   // ── S8-09 live dashboard after payment ───────────────────────────────────
@@ -731,7 +758,9 @@ async function main() {
 
       const dashAfter = await req(board, "GET", "/api/reports/dashboard");
       const paidAfter =
-        (dashAfter.json as { totals?: { paid: number } } | null)?.totals?.paid ??
+        kpiValue(dashAfter.json as RoleDash | null, "paid") ??
+        (dashAfter.json as RoleDash | null)?.totals?.paid ??
+        (dashAfter.json as RoleDash | null)?.finance?.totals?.paid ??
         null;
 
       const live =
@@ -815,29 +844,36 @@ async function main() {
   // ── S8-14 Board rollup by kind ───────────────────────────────────────────
   {
     const dash = await req(board, "GET", "/api/reports/dashboard");
+    const body = dash.json as RoleDash | null;
     const byKind =
-      (dash.json as {
-        byKind?: {
-          kind: string;
-          expected: number;
-          paid: number;
-          outstanding: number;
-        }[];
-        totals?: { expected: number; paid: number; outstanding: number };
-      } | null)?.byKind ?? [];
+      body?.finance?.byKind ??
+      (
+        body as {
+          byKind?: {
+            kind: string;
+            expected: number;
+            paid: number;
+            outstanding: number;
+          }[];
+        } | null
+      )?.byKind ??
+      [];
     const kinds = new Set(byKind.map((k) => k.kind));
     const need = ["Pledge", "Dues", "Thanksgiving"];
     const hasNeeded = need.every((k) => kinds.has(k));
     const hasOther = byKind.some(
       (k) => !need.includes(k.kind) || k.kind === "Tithe" || k.kind === "SpecialProject",
     );
-    const totals = (dash.json as { totals?: { expected: number } } | null)
-      ?.totals;
+    const expectedTotal =
+      kpiValue(body, "expected") ??
+      body?.totals?.expected ??
+      body?.finance?.totals?.expected ??
+      byKind.reduce((sum, k) => sum + Number(k.expected || 0), 0);
     assert(
       "S8-14",
       "Board Expected/Paid/Outstanding rollup",
-      dash.status === 200 && hasNeeded && !!totals && totals.expected > 0,
-      `kinds=[${[...kinds].join(",")}] totals.expected=${totals?.expected}; other/extra=${hasOther}`,
+      dash.status === 200 && hasNeeded && expectedTotal > 0,
+      `kinds=[${[...kinds].join(",")}] totals.expected=${expectedTotal}; other/extra=${hasOther}`,
     );
   }
 
