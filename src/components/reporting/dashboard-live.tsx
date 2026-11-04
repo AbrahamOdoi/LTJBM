@@ -146,7 +146,7 @@ export function DashboardLive({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/scenes/board.jpg"
-          alt="Leadership team meeting around a table"
+          alt="Stained-glass window of a saint holding a crucifix"
           className="h-32 w-full object-cover sm:h-36"
         />
         <p className="border-t border-[var(--lt-line)] px-4 py-2 text-xs text-[var(--lt-muted)]">

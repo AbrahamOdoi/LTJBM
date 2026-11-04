@@ -1,15 +1,24 @@
 # Scene photography attribution
 
-Local copies under `public/images/scenes/` are from [Unsplash](https://unsplash.com) (Unsplash License). Optimized for the LTJBM CDMS flat product UI.
+Local copies under `public/images/scenes/` are curated for **clearly Christian / church-appropriate** ministry context (sanctuary, congregation, cross, stained glass, altar). Flat product UI — no atmospheric gradients.
 
-| File | Subject | Unsplash photo |
-| --- | --- | --- |
-| `login.jpg` | Church sanctuary | [photo-1438032005730-c779502df39b](https://unsplash.com/photos/brown-wooden-church-pew-1438032005730-c779502df39b) |
-| `community.jpg` | People gathered | [photo-1511632765486-a01980e01a18](https://unsplash.com/photos/people-sitting-on-chairs-in-front-of-table-1511632765486-a01980e01a18) |
-| `gathering.jpg` | Friends together | [photo-1529156069898-49953e39b3ac](https://unsplash.com/photos/group-of-people-sitting-near-table-1529156069898-49953e39b3ac) |
-| `hands.jpg` | Joined hands | [photo-1469571486292-0ba58a3f068b](https://unsplash.com/photos/persons-hands-forming-heart-1469571486292-0ba58a3f068b) |
-| `workspace.jpg` | Quiet office | [photo-1497366216548-37526070297c](https://unsplash.com/photos/white-desk-lamp-beside-green-plant-1497366216548-37526070297c) |
-| `board.jpg` | Team meeting | [photo-1556761175-b413da4baf72](https://unsplash.com/photos/people-sitting-on-chair-in-front-of-table-while-holding-pens-during-daytime-1556761175-b413da4baf72) |
-| `empty.jpg` | Quiet interior | [photo-1507692049790-de58290a4334](https://unsplash.com/photos/brown-wooden-church-pew-with-chandelier-1507692049790-de58290a4334) |
+## Current scenes
 
-Demo member avatars under `public/uploads/members/demo-*.svg` and `public/images/avatars/` are original LTJBM placeholders (initials on teal/ink grounds) for seed demos — not photographs of real people.
+| File | Subject | Source | License / credit |
+| --- | --- | --- | --- |
+| `login.jpg` | Church sanctuary (stained glass & pews) | Unsplash [photo-1438032005730-c779502df39b](https://unsplash.com/photos/brown-wooden-church-pew-1438032005730-c779502df39b) | [Unsplash License](https://unsplash.com/license) |
+| `community.jpg` | Church exterior at night with steeple cross | Wikimedia Commons [`Church_Exterior.jpg`](https://commons.wikimedia.org/wiki/File:Church_Exterior.jpg) | See file page on Commons |
+| `gathering.jpg` | Congregational worship service | Wikimedia Commons [`Calvary_Baptist_Church_worship_service.jpg`](https://commons.wikimedia.org/wiki/File:Calvary_Baptist_Church_worship_service.jpg) | See file page on Commons |
+| `hands.jpg` | Church sanctuary altar with crucifix | Wikimedia Commons / Geograph [`Holy_Cross,_Ferrymead_Gardens…`](https://commons.wikimedia.org/wiki/File:Holy_Cross,_Ferrymead_Gardens,_Greenford_Magna_-_Sanctuary_-_geograph.org.uk_-_1101714.jpg) | CC BY-SA 2.0 (Geograph) |
+| `workspace.jpg` | Wooden church with steeple cross (Iceland) | Unsplash [photo-1548625149-fc4a29cf7092](https://unsplash.com/photos/blue-and-white-concrete-church-1548625149-fc4a29cf7092) | [Unsplash License](https://unsplash.com/license) |
+| `board.jpg` | Stained-glass window (St. Peter Canisius with crucifix) | Wikimedia Commons [`Saint_Joseph_Church_(Macon,_GA)_-_stained_glass…`](https://commons.wikimedia.org/wiki/File:Saint_Joseph_Church_(Macon,_GA)_-_stained_glass,_clerestory,_St._Peter_Canisius.jpg) | See file page on Commons |
+| `empty.jpg` | Historic church box pews | Wikimedia Commons / Geograph [`Box_Pews_in_the_Church_of_Saint_Mary,_Hanbury`](https://commons.wikimedia.org/wiki/File:Box_Pews_in_the_Church_of_Saint_Mary,_Hanbury_(01).jpg) | See file page on Commons |
+
+## Audit notes (2026-11-04)
+
+Replaced prior secular stock scenes (office hallway, abstract red-painted hands, lakeside friends, corporate meeting) with the church-forward set above after Abraham asked that all product photography be Christianity-related.
+
+## Other assets
+
+- `public/images/cross-pattern.svg` — original LTJBM Latin-cross tile used as a low-opacity paper watermark (not a photo).
+- Demo member avatars under `public/images/avatars/demo-*.svg` are original LTJBM initials placeholders — not photographs of real people.

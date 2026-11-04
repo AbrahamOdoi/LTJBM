@@ -37,7 +37,7 @@ export default async function HomePage() {
       <SceneBanner
         scene="gathering"
         density="strip"
-        caption="Ministry tools for your role — calm product chrome with real community imagery"
+        caption="Ministry tools for your role — church photography and calm product chrome"
       />
 
       <section className="lt-panel space-y-3 p-5">

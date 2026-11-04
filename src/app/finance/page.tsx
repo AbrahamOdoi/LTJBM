@@ -33,7 +33,7 @@ export default async function FinancePage() {
       <SceneBanner
         scene="hands"
         density="strip"
-        caption="Head Office contributions — expected, paid, and outstanding"
+        caption="Sanctuary altar — Head Office contributions expected, paid, outstanding"
       />
 
       <section className="grid gap-4 sm:grid-cols-3">
