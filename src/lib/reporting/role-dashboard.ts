@@ -1,5 +1,6 @@
 import { MemberStatus, ObligationKind } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { attendanceDashboardSlice } from "@/lib/attendance/service";
 import {
   getScopedBranchIds,
   memberBranchWhere,
@@ -294,19 +295,51 @@ export async function getRoleDashboard(
   const generatedAt = new Date().toISOString();
 
   if (profile === "membership") {
-    const membership = await membershipSlice(user);
+    const [membership, attendance] = await Promise.all([
+      membershipSlice(user),
+      attendanceDashboardSlice({
+        branchIds: await getScopedBranchIds(user),
+      }),
+    ]);
+    const attendanceKpis: KpiCard[] = [
+      {
+        id: "att-sessions-30d",
+        label: "Sessions (30d)",
+        value: attendance.sessions30d,
+        format: "count",
+      },
+      {
+        id: "att-checkins-30d",
+        label: "Check-ins (30d)",
+        value: attendance.checkIns30d,
+        format: "count",
+        emphasize: "ok",
+      },
+    ];
+    const attendanceChart: ChartSeries = {
+      id: "attendance-trend",
+      title: "Attendance trend",
+      format: "count",
+      data: attendance.trend.map((t) => ({
+        label: t.heldAt.slice(5),
+        value: t.effective,
+      })),
+    };
     return {
       generatedAt,
       profile,
       ...copy,
-      kpis: membership.kpis,
-      charts: membership.charts,
+      kpis: [...membership.kpis.slice(0, 3), ...attendanceKpis].slice(0, 6),
+      charts: [...membership.charts.slice(0, 1), attendanceChart],
       recentActivity: membership.recentActivity,
     };
   }
 
   if (profile === "board" || profile === "council") {
-    const finance = await getDashboardSnapshot();
+    const [finance, attendance] = await Promise.all([
+      getDashboardSnapshot(),
+      attendanceDashboardSlice({ branchIds: null }),
+    ]);
     const kpis: KpiCard[] = [
       {
         id: "expected",
@@ -329,9 +362,9 @@ export async function getRoleDashboard(
         emphasize: finance.totals.outstanding > 0 ? "warn" : "ok",
       },
       {
-        id: "obligations",
-        label: "Obligations",
-        value: finance.totals.obligationCount,
+        id: "att-sessions-30d",
+        label: "Sessions (30d)",
+        value: attendance.sessions30d,
         format: "count",
       },
     ];
@@ -346,6 +379,15 @@ export async function getRoleDashboard(
               ? "Special Project"
               : r.kind,
           value: r.outstanding,
+        })),
+      },
+      {
+        id: "attendance-trend",
+        title: "Attendance (aggregate)",
+        format: "count",
+        data: attendance.trend.map((t) => ({
+          label: t.heldAt.slice(5),
+          value: t.effective,
         })),
       },
     ];

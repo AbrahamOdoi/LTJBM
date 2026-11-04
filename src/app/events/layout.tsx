@@ -12,13 +12,14 @@ export default async function EventsLayout({
 
   const subNav = [
     { href: "/events", label: "Calendar" },
+    { href: "/events/rooms", label: "Rooms" },
     ...(writeOk ? [{ href: "/events/new", label: "Add event" }] : []),
   ];
 
   return (
     <AppShell
       title="Events"
-      subtitle="Church calendar MVP — registration light; room booking later."
+      subtitle="Church calendar and facility room bookings."
       role={session?.user?.role}
       userName={session?.user?.name}
       active="events"

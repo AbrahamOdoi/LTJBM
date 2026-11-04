@@ -36,6 +36,14 @@ export const authConfig = {
       const { pathname } = request.nextUrl;
       const isLoggedIn = !!auth?.user;
 
+      // Public QR / mobile check-in (token in path; no staff login on phone).
+      if (
+        pathname.startsWith("/check-in/") ||
+        pathname.startsWith("/api/check-in/")
+      ) {
+        return true;
+      }
+
       const publicPaths = ["/login"];
       if (publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
         if (isLoggedIn && pathname.startsWith("/login")) {

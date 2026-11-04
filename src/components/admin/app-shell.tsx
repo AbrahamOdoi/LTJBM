@@ -11,8 +11,11 @@ type Props = {
 const subNav = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/domains", label: "Domains & dropdowns" },
+  { href: "/admin/custom-fields", label: "Custom fields" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/communications", label: "Communications" },
+  { href: "/admin/audit", label: "Audit log" },
+  { href: "/admin/compliance", label: "Data protection" },
   { href: "/admin/export", label: "Export" },
   { href: "/admin/backup", label: "Backup" },
 ];

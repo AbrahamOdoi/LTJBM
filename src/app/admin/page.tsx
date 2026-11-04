@@ -52,9 +52,24 @@ export default async function AdminHomePage() {
             body: "Data-entry dropdown lists and parent values used on the member register (brief: domains / sub domains).",
           },
           {
+            href: "/admin/custom-fields",
+            title: "Custom fields",
+            body: "Freeform per-member fields beyond fixed domain dropdowns.",
+          },
+          {
             href: "/admin/users",
             title: "Users & roles",
             body: "Create and update Data Centre accounts, ministry roles, and branch scopes.",
+          },
+          {
+            href: "/admin/audit",
+            title: "Audit log",
+            body: "Browse who changed members, finance, attendance, and admin settings.",
+          },
+          {
+            href: "/admin/compliance",
+            title: "Data protection",
+            body: "Short Ghana DPA / photo retention guidance for operators.",
           },
           {
             href: "/admin/export",

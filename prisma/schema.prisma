@@ -93,6 +93,7 @@ model Branch {
   attendanceSessions AttendanceSession[]
   churchEvents ChurchEvent[]
   ministryGroups MinistryGroup[]
+  facilityRooms  FacilityRoom[]
 }
 
 model Cell {
@@ -193,6 +194,7 @@ model Member {
   portalUser       User?                 @relation("UserMemberLink")
   groupLeadership  GroupLeader[]
   groupRoster      GroupRosterEntry[]
+  customFieldValues MemberCustomFieldValue[]
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -493,46 +495,58 @@ model VisitorFollowUp {
   @@index([memberId])
 }
 
-// ─── Phase D — attendance (manual MVP) ───────────────────────────────────────
+// ─── Phase D/E — attendance (manual + QR / kiosk / mobile) ───────────────────
 
 enum AttendanceKind {
   Service
   Cell
 }
 
+enum AttendanceCheckInSource {
+  Manual
+  Kiosk
+  Mobile
+  Qr
+}
+
 model AttendanceSession {
-  id           String         @id @default(cuid())
-  kind         AttendanceKind
-  label        String
-  heldAt       DateTime
-  branchId     String
-  cellId       String?
-  headcount    Int?
-  notes        String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  branch       Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  cell         Cell?          @relation(fields: [cellId], references: [id], onDelete: SetNull)
-  records      AttendanceRecord[]
+  id            String         @id @default(cuid())
+  kind          AttendanceKind
+  label         String
+  heldAt        DateTime
+  branchId      String
+  cellId        String?
+  headcount     Int?
+  notes         String?
+  /// Opaque token for QR / mobile / kiosk check-in URLs.
+  checkInToken  String?        @unique
+  kioskEnabled  Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  branch        Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  cell          Cell?          @relation(fields: [cellId], references: [id], onDelete: SetNull)
+  records       AttendanceRecord[]
 
   @@index([branchId, heldAt])
   @@index([cellId, heldAt])
 }
 
 model AttendanceRecord {
-  id         String            @id @default(cuid())
+  id         String                   @id @default(cuid())
   sessionId  String
   memberId   String
-  present    Boolean           @default(true)
+  present    Boolean                  @default(true)
+  source     AttendanceCheckInSource  @default(Manual)
   markedById String?
   notes      String?
-  createdAt  DateTime          @default(now())
-  session    AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  member     Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  markedBy   User?             @relation("AttendanceMarker", fields: [markedById], references: [id], onDelete: SetNull)
+  createdAt  DateTime                 @default(now())
+  session    AttendanceSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  member     Member                   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  markedBy   User?                    @relation("AttendanceMarker", fields: [markedById], references: [id], onDelete: SetNull)
 
   @@unique([sessionId, memberId])
   @@index([memberId])
+  @@index([sessionId, present])
 }
 
 // ─── Phase D — pastoral care (restricted) ────────────────────────────────────
@@ -580,9 +594,92 @@ model ChurchEvent {
   updatedAt   DateTime  @updatedAt
   branch      Branch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
   registrations EventRegistration[]
+  roomBookings  RoomBooking[]
 
   @@index([startsAt])
   @@index([branchId])
+}
+
+// ─── Phase E — facilities (rooms + bookings) ─────────────────────────────────
+
+model FacilityRoom {
+  id          String        @id @default(cuid())
+  name        String
+  code        String?
+  branchId    String?
+  capacity    Int?
+  location    String?
+  notes       String?
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  branch      Branch?       @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  bookings    RoomBooking[]
+
+  @@unique([branchId, name])
+  @@index([isActive])
+}
+
+model RoomBooking {
+  id          String       @id @default(cuid())
+  roomId      String
+  title       String
+  startsAt    DateTime
+  endsAt      DateTime
+  bookedBy    String?
+  notes       String?
+  eventId     String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  room        FacilityRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  event       ChurchEvent? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([roomId, startsAt])
+  @@index([startsAt, endsAt])
+  @@index([eventId])
+}
+
+// ─── Phase E — freeform per-member custom fields ─────────────────────────────
+
+enum CustomFieldType {
+  Text
+  TextArea
+  Number
+  Date
+  Boolean
+  Select
+}
+
+model CustomFieldDefinition {
+  id          String          @id @default(cuid())
+  key         String          @unique
+  label       String
+  fieldType   CustomFieldType @default(Text)
+  /// For Select: JSON string array of option labels.
+  optionsJson Json?
+  helpText    String?
+  isRequired  Boolean         @default(false)
+  sortOrder   Int             @default(0)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  values      MemberCustomFieldValue[]
+
+  @@index([isActive, sortOrder])
+}
+
+model MemberCustomFieldValue {
+  id         String                @id @default(cuid())
+  memberId   String
+  fieldId    String
+  valueText  String?
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  member     Member                @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  field      CustomFieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, fieldId])
+  @@index([fieldId])
 }
 
 model EventRegistration {

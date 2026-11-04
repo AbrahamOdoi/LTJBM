@@ -72,6 +72,9 @@ export function RoleDashboardLive({ initial }: { initial: Payload }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href="/reports/attendance" className="lt-btn-secondary">
+            Attendance
+          </Link>
           <Link href="/reports/library" className="lt-btn-secondary">
             Standard reports
           </Link>

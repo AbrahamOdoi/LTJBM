@@ -23,21 +23,27 @@ export default async function AttendanceDetailPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm text-[var(--lt-muted)]">
-          <Link href="/attendance" className="lt-link">
-            Attendance
-          </Link>{" "}
-          / session
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--lt-ink)]">
-          {row.label}
-        </h2>
-        <p className="mt-1 text-sm text-[var(--lt-muted)]">
-          {row.kind} · {row.heldAt.toISOString().slice(0, 10)} · {row.branch.name}
-          {row.cell ? ` · ${row.cell.name}` : ""}
-          {row.headcount != null ? ` · headcount ${row.headcount}` : ""}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-[var(--lt-muted)]">
+            <Link href="/attendance" className="lt-link">
+              Attendance
+            </Link>{" "}
+            / session
+          </p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--lt-ink)]">
+            {row.label}
+          </h2>
+          <p className="mt-1 text-sm text-[var(--lt-muted)]">
+            {row.kind} · {row.heldAt.toISOString().slice(0, 10)} · {row.branch.name}
+            {row.cell ? ` · ${row.cell.name}` : ""}
+            {row.headcount != null ? ` · headcount ${row.headcount}` : ""}
+            {row.kioskEnabled ? " · QR open" : " · QR closed"}
+          </p>
+        </div>
+        <Link href={`/attendance/${row.id}/kiosk`} className="lt-btn-secondary">
+          Kiosk / QR
+        </Link>
       </div>
 
       {writeOk ? (
@@ -53,7 +59,7 @@ export default async function AttendanceDetailPage({
         ) : (
           <ul className="divide-y divide-slate-100 text-sm">
             {row.records.map((r) => (
-              <li key={r.id} className="flex justify-between px-4 py-3">
+              <li key={r.id} className="flex justify-between gap-3 px-4 py-3">
                 <span>
                   {r.member.firstName} {r.member.lastName}
                   <span className="text-[var(--lt-muted)]">
@@ -61,8 +67,10 @@ export default async function AttendanceDetailPage({
                     · {r.member.memberNumber ?? "—"}
                   </span>
                 </span>
-                <span className="text-[var(--lt-muted)]">
+                <span className="shrink-0 text-[var(--lt-muted)]">
                   {r.present ? "Present" : "Absent"}
+                  {" · "}
+                  {r.source}
                 </span>
               </li>
             ))}

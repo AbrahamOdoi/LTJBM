@@ -1130,6 +1130,8 @@ async function main() {
         heldAt: new Date(),
         branchId: eastLegon.id,
         headcount: 86,
+        checkInToken: "demo-checkin-token-sunday",
+        kioskEnabled: true,
       },
     });
     await prisma.attendanceRecord.create({
@@ -1138,6 +1140,86 @@ async function main() {
         memberId: portalMember.id,
         present: true,
         markedById: clerk.id,
+        source: "Manual",
+      },
+    });
+  } else {
+    const untokensed = await prisma.attendanceSession.findMany({
+      where: { checkInToken: null },
+      select: { id: true },
+      take: 20,
+    });
+    for (const [i, row] of untokensed.entries()) {
+      await prisma.attendanceSession.update({
+        where: { id: row.id },
+        data: {
+          checkInToken: `demo-checkin-token-${i + 1}`,
+          kioskEnabled: true,
+        },
+      });
+    }
+  }
+
+  const roomCount = await prisma.facilityRoom.count();
+  if (roomCount === 0) {
+    const sanctuary = await prisma.facilityRoom.create({
+      data: {
+        name: "Main sanctuary",
+        code: "SANCT",
+        branchId: hq.id,
+        capacity: 400,
+        location: "Ground floor",
+      },
+    });
+    await prisma.facilityRoom.create({
+      data: {
+        name: "Youth hall",
+        code: "YOUTH",
+        branchId: eastLegon.id,
+        capacity: 80,
+        location: "First floor",
+      },
+    });
+    const starts = new Date(Date.now() + 3 * 86400000);
+    starts.setUTCHours(9, 0, 0, 0);
+    const ends = new Date(starts.getTime() + 3 * 3600000);
+    await prisma.roomBooking.create({
+      data: {
+        roomId: sanctuary.id,
+        title: "Sunday service (demo booking)",
+        startsAt: starts,
+        endsAt: ends,
+        bookedBy: "Data Centre",
+      },
+    });
+  }
+
+  const cfCount = await prisma.customFieldDefinition.count();
+  if (cfCount === 0) {
+    const lang = await prisma.customFieldDefinition.create({
+      data: {
+        key: "preferred_language",
+        label: "Preferred language",
+        fieldType: "Select",
+        optionsJson: ["English", "Twi", "Ga", "Ewe"],
+        helpText: "Language for pastoral follow-up",
+        sortOrder: 10,
+      },
+    });
+    await prisma.customFieldDefinition.create({
+      data: {
+        key: "allergies_notes",
+        label: "Allergies / medical notes",
+        fieldType: "TextArea",
+        helpText: "Optional — for hospitality / first aid awareness",
+        sortOrder: 20,
+      },
+    });
+    await prisma.memberCustomFieldValue.create({
+      data: {
+        memberId: portalMember.id,
+        fieldId: lang.id,
+        valueText: "English",
       },
     });
   }

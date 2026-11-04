@@ -20,6 +20,7 @@ export default async function ReportsLayout({
 
   const subNav = [
     { href: "/reports", label: "Dashboard" },
+    { href: "/reports/attendance", label: "Attendance" },
     { href: "/reports/library", label: "Standard reports" },
     { href: "/reports/builder", label: "Custom reports" },
     ...(canEdit

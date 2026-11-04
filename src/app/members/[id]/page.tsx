@@ -8,6 +8,8 @@ import {
   MemberMilestonesPanel,
   MemberTagsPanel,
 } from "@/components/members/enrichment-panels";
+import { MemberCustomFieldsPanel } from "@/components/members/custom-fields-panel";
+import { getMemberCustomFieldValues } from "@/lib/custom-fields/service";
 import {
   BranchTransferForm,
   StatusChangeForm,
@@ -40,10 +42,11 @@ export default async function MemberDetailPage({ params }: { params: Params }) {
 
   const writeOk = canWriteMembers(session.user.role);
   const scoped = await getScopedBranchIds(session.user);
-  const [branches, cells, fellowships] = await Promise.all([
+  const [branches, cells, fellowships, customFieldRows] = await Promise.all([
     listBranchesForUser(session.user),
     listCellsForBranches(scoped),
     listFellowships(),
+    getMemberCustomFieldValues(id),
   ]);
 
   const activeCell = member.groups.find((g) => g.kind === "Cell");
@@ -169,6 +172,11 @@ export default async function MemberDetailPage({ params }: { params: Params }) {
           <MemberTagsPanel
             memberId={member.id}
             tags={member.tags}
+            writeOk={writeOk}
+          />
+          <MemberCustomFieldsPanel
+            memberId={member.id}
+            rows={customFieldRows}
             writeOk={writeOk}
           />
           <MemberMilestonesPanel
