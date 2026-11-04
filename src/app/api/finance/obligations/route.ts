@@ -5,6 +5,7 @@ import {
   withFinanceWrite,
 } from "@/app/api/finance/_guard";
 import { requireFinanceWrite } from "@/lib/auth-guards";
+import { parsePageParams } from "@/lib/data-table";
 import {
   createObligation,
   listObligations,
@@ -21,17 +22,30 @@ function parseKind(value: string | null): ObligationKind | undefined {
 export async function GET(request: NextRequest) {
   return withFinanceAccess(async () => {
     const params = request.nextUrl.searchParams;
-    const obligations = await listObligations({
+    const { page, pageSize } = parsePageParams({
+      page: params.get("page") ?? undefined,
+      pageSize: params.get("pageSize") ?? undefined,
+    });
+    const listed = await listObligations({
       kind: parseKind(params.get("kind")),
       memberId: params.get("memberId") ?? undefined,
+      q: params.get("q") ?? undefined,
       periodStart: params.get("periodStart")
         ? new Date(params.get("periodStart")!)
         : undefined,
       periodEnd: params.get("periodEnd")
         ? new Date(params.get("periodEnd")!)
         : undefined,
+      page,
+      pageSize,
     });
-    return NextResponse.json({ obligations });
+    return NextResponse.json({
+      obligations: listed.items,
+      total: listed.total,
+      page: listed.page,
+      pageSize: listed.pageSize,
+      pageCount: listed.pageCount,
+    });
   });
 }
 

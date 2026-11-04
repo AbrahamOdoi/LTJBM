@@ -32,7 +32,11 @@ export async function listMembers(opts: {
   cellId?: string;
   fellowshipId?: string;
   status?: string;
+  /** @deprecated Prefer page/pageSize. Kept for print take=500. */
   take?: number;
+  skip?: number;
+  page?: number;
+  pageSize?: number;
 }) {
   const scoped = await getScopedBranchIds(opts.user);
   const where = {
@@ -72,11 +76,17 @@ export async function listMembers(opts: {
       : {}),
   };
 
+  const pageSize = opts.pageSize ?? opts.take ?? 25;
+  const page = Math.max(1, opts.page ?? 1);
+  const skip =
+    opts.skip ?? (opts.page != null ? (page - 1) * pageSize : 0);
+
   const [members, total] = await Promise.all([
     prisma.member.findMany({
       where,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      take: opts.take ?? 200,
+      skip,
+      take: pageSize,
       include: {
         branch: { select: { id: true, name: true, code: true, isInternational: true, country: true } },
         groups: {
@@ -94,7 +104,14 @@ export async function listMembers(opts: {
     prisma.member.count({ where }),
   ]);
 
-  return { members, total };
+  const pageCount = Math.max(1, Math.ceil(total / pageSize) || 1);
+  return {
+    members,
+    total,
+    page,
+    pageSize,
+    pageCount,
+  };
 }
 
 export async function getMemberDetail(user: SessionUserLike, memberId: string) {

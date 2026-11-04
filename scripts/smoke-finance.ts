@@ -8,31 +8,34 @@ import { canAccessFinance, canWriteFinance } from "../src/lib/roles";
 
 async function main() {
   const rollup = await getBalanceRollup({});
-  const arrears = await listDuesArrears({});
-  const batches = await listCollectionBatches();
-  const pledges = await listObligations({ kind: "Pledge" });
-  const specials = await listObligations({ kind: "SpecialProject" });
+  const arrears = await listDuesArrears({ pageSize: 100 });
+  const batches = await listCollectionBatches({ pageSize: 100 });
+  const pledges = await listObligations({ kind: "Pledge", pageSize: 100 });
+  const specials = await listObligations({
+    kind: "SpecialProject",
+    pageSize: 100,
+  });
 
   console.log(
     JSON.stringify(
       {
         rollupTotals: rollup.totals,
-        pledgeBalances: pledges.map((p) => ({
+        pledgeBalances: pledges.items.map((p) => ({
           member: p.member.name,
           ...p.balances,
           instalments: p.instalmentCount,
         })),
-        specialBalances: specials.map((p) => ({
+        specialBalances: specials.items.map((p) => ({
           member: p.member.name,
           ...p.balances,
           projectTarget: p.projectTargetAmount,
         })),
-        arrearsCount: arrears.length,
-        arrears: arrears.map((a) => ({
+        arrearsCount: arrears.total,
+        arrears: arrears.items.map((a) => ({
           member: a.member.name,
           outstanding: a.balances.outstanding,
         })),
-        batches: batches.map((b) => ({
+        batches: batches.items.map((b) => ({
           label: b.label,
           counted: b.countedTotal,
           system: b.systemTotal,

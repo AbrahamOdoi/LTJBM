@@ -18,6 +18,7 @@ import {
   serializeObligation,
   serializePayment,
 } from "@/lib/finance/serializers";
+import { pageResult, type PageResult } from "@/lib/data-table";
 
 const obligationInclude = {
   obligationType: true,
@@ -150,26 +151,62 @@ export async function createObligation(input: CreateObligationInput) {
 export async function listObligations(filters: {
   kind?: ObligationKind;
   memberId?: string;
+  q?: string;
   periodStart?: Date;
   periodEnd?: Date;
-}) {
-  const obligations = await prisma.obligation.findMany({
-    where: {
-      memberId: filters.memberId,
-      obligationType: filters.kind ? { kind: filters.kind } : undefined,
-      ...(filters.periodStart || filters.periodEnd
-        ? {
-            periodStart: {
-              ...(filters.periodStart ? { gte: filters.periodStart } : {}),
-              ...(filters.periodEnd ? { lte: filters.periodEnd } : {}),
+  page?: number;
+  pageSize?: number;
+}): Promise<PageResult<ReturnType<typeof serializeObligation>>> {
+  const page = Math.max(1, filters.page ?? 1);
+  const pageSize = filters.pageSize ?? 25;
+  const q = filters.q?.trim();
+
+  const where: Prisma.ObligationWhereInput = {
+    memberId: filters.memberId,
+    obligationType: filters.kind ? { kind: filters.kind } : undefined,
+    ...(filters.periodStart || filters.periodEnd
+      ? {
+          periodStart: {
+            ...(filters.periodStart ? { gte: filters.periodStart } : {}),
+            ...(filters.periodEnd ? { lte: filters.periodEnd } : {}),
+          },
+        }
+      : {}),
+    ...(q
+      ? {
+          OR: [
+            {
+              member: {
+                OR: [
+                  { firstName: { contains: q, mode: "insensitive" } },
+                  { lastName: { contains: q, mode: "insensitive" } },
+                  { memberNumber: { contains: q, mode: "insensitive" } },
+                ],
+              },
             },
-          }
-        : {}),
-    },
-    include: obligationInclude,
-    orderBy: [{ periodStart: "desc" }, { createdAt: "desc" }],
-  });
-  return obligations.map(serializeObligation);
+            {
+              obligationType: {
+                name: { contains: q, mode: "insensitive" },
+              },
+            },
+            { notes: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.obligation.findMany({
+      where,
+      include: obligationInclude,
+      orderBy: [{ periodStart: "desc" }, { createdAt: "desc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.obligation.count({ where }),
+  ]);
+
+  return pageResult(rows.map(serializeObligation), total, page, pageSize);
 }
 
 export async function getObligation(id: string) {
@@ -306,12 +343,45 @@ export async function createCollectionBatch(input: CreateBatchInput) {
   return serializeBatch(batch);
 }
 
-export async function listCollectionBatches() {
-  const batches = await prisma.collectionBatch.findMany({
-    include: { payments: true },
-    orderBy: { batchDate: "desc" },
-  });
-  return batches.map(serializeBatch);
+export async function listCollectionBatches(filters?: {
+  q?: string;
+  variance?: "open" | "balanced" | string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PageResult<ReturnType<typeof serializeBatch>>> {
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = filters?.pageSize ?? 25;
+  const q = filters?.q?.trim();
+  const variance = filters?.variance;
+
+  const where: Prisma.CollectionBatchWhereInput = {
+    ...(variance === "open"
+      ? { hasVariance: true }
+      : variance === "balanced"
+        ? { hasVariance: false }
+        : {}),
+    ...(q
+      ? {
+          OR: [
+            { label: { contains: q, mode: "insensitive" } },
+            { notes: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.collectionBatch.findMany({
+      where,
+      include: { payments: true },
+      orderBy: { batchDate: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.collectionBatch.count({ where }),
+  ]);
+
+  return pageResult(rows.map(serializeBatch), total, page, pageSize);
 }
 
 export async function getCollectionBatch(id: string) {
@@ -441,9 +511,40 @@ export async function listDuesArrears(filters: {
   cellId?: string;
   fellowshipMinistryId?: string;
   groupKind?: GroupKind;
+  q?: string;
   periodStart?: Date;
   periodEnd?: Date;
+  page?: number;
+  pageSize?: number;
 }) {
+  const page = Math.max(1, filters.page ?? 1);
+  const pageSize = filters.pageSize ?? 25;
+  const q = filters.q?.trim();
+
+  const memberWhere: Prisma.MemberWhereInput = {
+    ...(filters.cellId || filters.fellowshipMinistryId || filters.groupKind
+      ? {
+          groups: {
+            some: {
+              endedAt: null,
+              kind: filters.groupKind,
+              cellId: filters.cellId,
+              fellowshipMinistryId: filters.fellowshipMinistryId,
+            },
+          },
+        }
+      : {}),
+    ...(q
+      ? {
+          OR: [
+            { firstName: { contains: q, mode: "insensitive" } },
+            { lastName: { contains: q, mode: "insensitive" } },
+            { memberNumber: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
   const obligations = await prisma.obligation.findMany({
     where: {
       obligationType: { kind: ObligationKind.Dues },
@@ -456,20 +557,7 @@ export async function listDuesArrears(filters: {
             },
           }
         : {}),
-      ...(filters.cellId || filters.fellowshipMinistryId || filters.groupKind
-        ? {
-            member: {
-              groups: {
-                some: {
-                  endedAt: null,
-                  kind: filters.groupKind,
-                  cellId: filters.cellId,
-                  fellowshipMinistryId: filters.fellowshipMinistryId,
-                },
-              },
-            },
-          }
-        : {}),
+      ...(Object.keys(memberWhere).length > 0 ? { member: memberWhere } : {}),
     },
     include: {
       ...obligationInclude,
@@ -494,7 +582,7 @@ export async function listDuesArrears(filters: {
     orderBy: [{ periodStart: "asc" }, { createdAt: "asc" }],
   });
 
-  return obligations
+  const all = obligations
     .map((ob) => {
       const balances = computeObligationBalances(ob);
       return {
@@ -517,6 +605,10 @@ export async function listDuesArrears(filters: {
       };
     })
     .filter((row) => row.inArrears);
+
+  const total = all.length;
+  const start = (page - 1) * pageSize;
+  return pageResult(all.slice(start, start + pageSize), total, page, pageSize);
 }
 
 export async function getBalanceRollup(filters: {
