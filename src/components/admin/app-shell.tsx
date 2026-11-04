@@ -25,7 +25,6 @@ export function AdminAppShell({ children, title, subtitle, userName }: Props) {
       userName={userName}
       active="admin"
       subNav={subNav}
-      banner="Data Centre — domains & subdomains, users, export, and backup"
     >
       {children}
     </AppShell>

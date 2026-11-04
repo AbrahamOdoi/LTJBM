@@ -5,7 +5,7 @@ import { accessModeLabel } from "@/lib/role-labels";
 const subNav = [
   { href: "/finance", label: "Overview" },
   { href: "/finance/obligations", label: "Pledges & obligations" },
-  { href: "/finance/batches", label: "Saturday collection batches" },
+  { href: "/finance/batches", label: "Saturday collections" },
   { href: "/finance/arrears", label: "Dues arrears" },
 ];
 
@@ -20,12 +20,11 @@ export default async function FinanceLayout({
   return (
     <AppShell
       title="Contributions"
-      subtitle={`${accessModeLabel(role, "finance")}. Head Office finance — branches handle membership only.`}
+      subtitle={`${accessModeLabel(role, "finance")}. Head Office only — branches handle membership.`}
       role={role}
       userName={session?.user?.name}
       active="finance"
       subNav={subNav}
-      banner="Head Office contributions — Pledge, Tithe, Dues, Thanksgiving, Special Project"
       hidePageHeader
     >
       {children}

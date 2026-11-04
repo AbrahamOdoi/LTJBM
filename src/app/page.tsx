@@ -28,13 +28,13 @@ export default async function HomePage() {
   return (
     <AppShell
       title={`Welcome${session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}`}
-      subtitle="Open the ministry tools your role allows. Contributions stay at Head Office; Records Clerks work in the member register only."
+      subtitle="Open the tools your role allows. Contributions stay at Head Office; Records Clerks work in the member register only."
       role={role}
       userName={session?.user?.name}
       active="home"
     >
       <section className="lt-panel space-y-3 p-5">
-        <h2 className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-[var(--lt-muted)]">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-[var(--lt-muted)]">
           Signed in
         </h2>
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -51,12 +51,12 @@ export default async function HomePage() {
             </dd>
           </div>
           <div>
-            <dt className="text-[var(--lt-muted)]">Ministry role</dt>
+            <dt className="text-[var(--lt-muted)]">Role</dt>
             <dd className="font-medium text-[var(--lt-ink)]">{roleLabel(role)}</dd>
           </div>
           <div>
             <dt className="text-[var(--lt-muted)]">Access</dt>
-            <dd className="font-medium text-[var(--lt-ink-soft)]">
+            <dd className="text-[var(--lt-ink-soft)]">
               {[
                 membersOk
                   ? accessModeLabel(role, "members")
@@ -75,7 +75,7 @@ export default async function HomePage() {
           </div>
         </dl>
         {isRecordsClerk(role) ? (
-          <p className="rounded-md border border-[color-mix(in_srgb,var(--lt-warn)_35%,var(--lt-line))] bg-[color-mix(in_srgb,var(--lt-warn)_10%,white)] px-3 py-2 text-sm text-[var(--lt-ink)]">
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
             As Records Clerk you work in <strong>Members</strong> only.
             Contributions and Board reports stay closed — that is intentional.
           </p>
@@ -83,8 +83,8 @@ export default async function HomePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-[var(--lt-muted)]">
-          Your ministry tools
+        <h2 className="text-xs font-medium uppercase tracking-wide text-[var(--lt-muted)]">
+          Your tools
         </h2>
         {surfaces.length === 0 ? (
           <p className="text-sm text-[var(--lt-muted)]">
@@ -96,9 +96,9 @@ export default async function HomePage() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="lt-panel block h-full p-4 transition hover:border-[var(--lt-accent)]"
+                  className="lt-panel block h-full p-4 hover:border-[var(--lt-accent)]"
                 >
-                  <span className="font-display text-lg font-medium text-[var(--lt-ink)]">
+                  <span className="font-medium text-[var(--lt-ink)]">
                     {item.label}
                   </span>
                   <span className="mt-1 block text-sm text-[var(--lt-muted)]">
@@ -112,7 +112,7 @@ export default async function HomePage() {
       </section>
 
       {membersWrite ? (
-        <section className="rounded-lg border border-dashed border-[var(--lt-line)] bg-white/50 p-4 text-sm text-[var(--lt-ink-soft)]">
+        <section className="rounded-lg border border-dashed border-[var(--lt-line-strong)] bg-white p-4 text-sm text-[var(--lt-ink-soft)]">
           <p className="font-medium text-[var(--lt-ink)]">Quick start</p>
           <p className="mt-1">
             Register a member with household, cell, and fellowship ministry,

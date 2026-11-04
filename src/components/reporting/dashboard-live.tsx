@@ -109,24 +109,21 @@ export function DashboardLive({
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--lt-ink)]">
+          <h2 className="text-2xl font-semibold tracking-tight text-[var(--lt-ink)]">
             {layout.title}
           </h2>
-          <p className="mt-1.5 text-sm text-[var(--lt-muted)]">
-            Live Expected / Paid / Outstanding · last refresh{" "}
+          <p className="mt-1 text-sm text-[var(--lt-muted)]">
+            {data.view === "board"
+              ? "Pastoral Board · aggregated totals"
+              : data.view === "council"
+                ? "Leadership Council · includes branch & period"
+                : "Data Centre / Financial Secretary view"}
+            {" · "}
+            Updated{" "}
             <time dateTime={data.generatedAt}>
               {new Date(data.generatedAt).toLocaleString()}
             </time>
             {pending ? " · refreshing…" : ""}
-          </p>
-          <p className="mt-1 text-xs text-[var(--lt-muted)]">
-            {data.view === "board"
-              ? "Pastoral Board view — aggregated totals only"
-              : data.view === "council"
-                ? "Leadership Council view (includes branch & period)"
-                : "Full Data Centre / Financial Secretary view"}
-            {" · "}
-            figures update when contributions are posted — no manual rebuild
           </p>
         </div>
         <button
@@ -157,7 +154,7 @@ export function DashboardLive({
 
       <section className="lt-table-wrap">
         <table className="min-w-full text-sm">
-          <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
+          <thead className="bg-[#f9fafb] text-left text-[var(--lt-muted)]">
             <tr>
               <th className="px-4 py-3 font-medium">Kind</th>
               <th className="px-4 py-3 font-medium">Obligations</th>
@@ -210,7 +207,7 @@ export function DashboardLive({
           </h3>
           <div className="lt-table-wrap">
             <table className="min-w-full text-sm">
-              <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
+              <thead className="bg-[#f9fafb] text-left text-[var(--lt-muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Branch</th>
                   <th className="px-4 py-3 font-medium">Expected</th>
@@ -257,7 +254,7 @@ export function DashboardLive({
           </h3>
           <div className="lt-table-wrap">
             <table className="min-w-full text-sm">
-              <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
+              <thead className="bg-[#f9fafb] text-left text-[var(--lt-muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Period</th>
                   <th className="px-4 py-3 font-medium">Expected</th>
@@ -293,9 +290,8 @@ export function DashboardLive({
       ) : null}
 
       <p className="text-xs text-[var(--lt-muted)]">
-        Board reports show aggregated Expected / Paid / Outstanding only.
-        Individual contribution detail stays under Contributions for authorised
-        Head Office roles.
+        Individual giving is not shown here. Authorised Head Office roles use
+        Contributions for member-level detail.
       </p>
     </div>
   );
