@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Required for the multi-stage Dockerfile (standalone Node server).
+  output: "standalone",
 };
 
 export default nextConfig;

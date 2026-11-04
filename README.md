@@ -9,9 +9,10 @@ Phase A/B foundation:
 - Auth.js (NextAuth v5) credential sessions with roles
 - Middleware / route guards: HQ-only finance; Admin-only `/admin`; RecordsClerk denied finance
 - Audit log plumbing (`writeAuditLog`)
-- Docker Compose for local Postgres
+- Docker Compose for local Postgres (+ optional staging-like `app` profile)
+- GitHub Actions CI: lint / typecheck / unit tests / production build
 - **Members / Biodata:** register/update, household, cells & fellowships, photo upload, deterministic duplicates, status history, Ghana→international transfer, individual/group print, ≥100 seeded members
-- **Admin / Migration:** domains/dropdowns/subdomains, user/role admin, member CSV/JSON export, logical backup snapshot + `docs/backup-restore.md`
+- **Admin / Migration:** domains/dropdowns/subdomains, user/role admin, member CSV/JSON export, logical backup snapshot + `docs/backup-restore.md` + `scripts/backup-db.sh` / `restore-db.sh`
 
 Finance Phase A (HQ): obligations, payments, Saturday batch variance, dues
 arrears, and Expected/Paid/Outstanding APIs.
@@ -47,13 +48,24 @@ cp .env.example .env
 # Generate AUTH_SECRET:
 #   openssl rand -base64 32
 
-# 3. Start Postgres
-docker compose up -d
+# 3. Start Postgres (bound to 127.0.0.1 only)
+docker compose up -d postgres
 
 # 4. Migrate + seed demo users / org skeleton
-npx prisma migrate dev --name init
+npx prisma migrate deploy
 npm run db:seed
 ```
+
+### Staging-like local (full Compose stack)
+
+```bash
+# Set AUTH_SECRET (and preferably POSTGRES_PASSWORD) in .env first
+docker compose --profile staging up -d --build
+docker compose --profile staging exec app npx prisma migrate deploy
+docker compose --profile staging exec app npm run db:seed
+```
+
+Open [http://localhost:3000](http://localhost:3000). Staging/deploy assumptions: see Project store `docs/deploy-runbook.md`.
 
 ## Develop
 
@@ -112,12 +124,16 @@ Default schedule cron: `0 8 1 * *` (08:00 on the 1st) to `board@ltjbm.local` + `
 | --- | --- |
 | `npm run dev` | Next.js dev server (Turbopack) |
 | `npm run build` / `npm start` | Production build & serve |
-| `npm run db:migrate` | Apply Prisma migrations |
+| `npm run lint` / `npm run typecheck` | ESLint + `tsc --noEmit` |
+| `npm test` | Finance + reporting unit tests |
+| `npm run db:migrate` | Apply Prisma migrations (dev) |
+| `npm run db:deploy` | Apply Prisma migrations (CI/staging) |
 | `npm run db:seed` | Seed roles/org/demo users |
 | `npm run db:studio` | Prisma Studio |
 | `npm run test:finance` | Finance balance / batch variance unit tests |
 | `npm run test:reporting` | Report template layout unit tests |
 | `npm run report:monthly` | Generate monthly Board email artifact |
+| `npm run backup:db` / `npm run restore:db` | Postgres dump/restore via Compose |
 | `npx prisma generate` | Regenerate Prisma Client |
 
 ## Layout (key paths)
@@ -144,10 +160,14 @@ src/app/api/reports/          Reporting APIs (aggregates read + template edit)
 src/app/api/admin/            Member export + backup snapshot (Admin-only)
 src/components/finance/       Finance forms
 src/components/reporting/     Dashboard live refresh, template editor
-docs/backup-restore.md        Section 8 restore narrative (pg_dump/restore)
+docs/backup-restore.md        Section 8 restore narrative + scripts
 docs/demo-script.md           Section 8 Demo Day script
 docs/user-guides/             Role user guides (Admin, Finance, Branch, Data Centre)
-docker-compose.yml            Local Postgres 16
+scripts/backup-db.sh          Postgres custom-format dump → ./backups
+scripts/restore-db.sh         pg_restore + optional uploads archive
+docker-compose.yml            Postgres 16 (+ staging profile `app`)
+Dockerfile                    Standalone Next.js production image
+.github/workflows/ci.yml      Lint / typecheck / test / build
 public/uploads/members/       Local photo storage (demo)
 ```
 

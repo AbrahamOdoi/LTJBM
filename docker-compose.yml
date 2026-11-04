@@ -1,21 +1,97 @@
+# Local Postgres (default) + optional staging-like full stack.
+#
+# Day-to-day (Postgres only — app via `npm run dev`):
+#   docker compose up -d postgres
+#
+# Staging-like local (Postgres + Next.js container):
+#   cp .env.example .env   # set AUTH_SECRET, stronger POSTGRES_PASSWORD
+#   docker compose --profile staging up -d --build
+#   docker compose --profile staging exec app npx prisma migrate deploy
+#   docker compose --profile staging exec app npm run db:seed
+
+name: ltjbm-cdms
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: ltjbm-cdms-postgres
     restart: unless-stopped
+    # Bind host loopback only — do not publish Postgres on the public interface.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     environment:
-      POSTGRES_USER: cdms
-      POSTGRES_PASSWORD: cdms
-      POSTGRES_DB: cdms
+      POSTGRES_USER: ${POSTGRES_USER:-cdms}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cdms}
+      POSTGRES_DB: ${POSTGRES_DB:-cdms}
     volumes:
       - cdms_pgdata:/var/lib/postgresql/data
+      # Host ./backups is where scripts/backup-db.sh writes dumps (also visible in-container).
+      - ./backups:/backups
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cdms -d cdms"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-cdms} -d ${POSTGRES_DB:-cdms}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
+    networks:
+      - cdms
+    # Soft caps for laptop / small VPS staging; raise if needed.
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  app:
+    profiles: ["staging"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ltjbm-cdms-app
+    restart: unless-stopped
+    ports:
+      - "${APP_HOST_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cdms}:${POSTGRES_PASSWORD:-cdms}@postgres:5432/${POSTGRES_DB:-cdms}?schema=public
+      # Override in .env before `docker compose --profile staging up` (do not ship the placeholder).
+      AUTH_SECRET: ${AUTH_SECRET:-replace-with-a-long-random-secret}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      SEED_PASSWORD: ${SEED_PASSWORD:-ChangeMe123!}
+      REPORT_EMAIL_MODE: ${REPORT_EMAIL_MODE:-file}
+      REPORT_EMAIL_DIR: ${REPORT_EMAIL_DIR:-/app/tmp/board-reports}
+      REPORT_CRON_SECRET: ${REPORT_CRON_SECRET:-}
+    volumes:
+      - cdms_uploads:/app/public/uploads/members
+      - cdms_report_tmp:/app/tmp/board-reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:3000/login >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - cdms
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+networks:
+  cdms:
+    driver: bridge
 
 volumes:
   cdms_pgdata:
+  cdms_uploads:
+  cdms_report_tmp:
