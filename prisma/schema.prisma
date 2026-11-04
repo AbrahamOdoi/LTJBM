@@ -33,6 +33,7 @@ model User {
   branchScopes UserBranchScope[]
   auditLogs    AuditLog[]        @relation("AuditActor")
   statusChanges MemberStatusHistory[] @relation("StatusChangedBy")
+  savedReports SavedReport[]
 }
 
 /// Branch / unit scope for Branch Leaders (and similar limited roles).
@@ -339,6 +340,26 @@ model ReportSchedule {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   reportTemplate  ReportTemplate @relation(fields: [reportTemplateId], references: [id], onDelete: Cascade)
+}
+
+/// Named custom report definitions (MVP builder — members or contributions dataset).
+model SavedReport {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  /// members | contributions
+  dataset     String
+  filters     Json     @default("{}")
+  columns     Json
+  /// Role that owns / may open this saved report (church-native RBAC).
+  roleScope   String
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([roleScope, dataset])
+  @@index([createdById])
 }
 
 // ─── Admin domains / dropdowns (skeleton) ────────────────────────────────────

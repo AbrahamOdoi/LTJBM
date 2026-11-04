@@ -18,8 +18,8 @@ export default async function ForbiddenPage({
         }
       : reason === "reporting"
         ? {
-            title: "Board reports are role-gated",
-            body: "Pastoral Board and Leadership Council see Expected / Paid / Outstanding only — never individual givers. Records Clerks and Branch Leaders stay on Members.",
+            title: "Reports are role-gated",
+            body: "Pastoral Board and Leadership Council see Expected / Paid / Outstanding only — never individual givers. Contribution detail reports stay with Head Office.",
             nextHref: "/login",
             nextLabel: "Switch account",
           }

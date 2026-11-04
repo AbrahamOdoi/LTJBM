@@ -28,7 +28,7 @@ export default async function HomePage() {
   return (
     <AppShell
       title={`Welcome${session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}`}
-      subtitle="Open the tools your role allows. Contributions stay at Head Office; Records Clerks work in the member register only."
+      subtitle="Open the tools your role allows. Contributions stay at Head Office; Records Clerks use Members and membership Reports only."
       role={role}
       userName={session?.user?.name}
       active="home"
@@ -66,7 +66,7 @@ export default async function HomePage() {
                   : "No Contributions access",
                 reportingOk
                   ? accessModeLabel(role, "reports")
-                  : "No Board reports access",
+                  : "No Reports access",
                 adminOk ? accessModeLabel(role, "admin") : null,
               ]
                 .filter(Boolean)
@@ -76,8 +76,9 @@ export default async function HomePage() {
         </dl>
         {isRecordsClerk(role) ? (
           <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-            As Records Clerk you work in <strong>Members</strong> only.
-            Contributions and Board reports stay closed — that is intentional.
+            As Records Clerk you work in <strong>Members</strong> and membership{" "}
+            <strong>Reports</strong>. Contributions stay closed at Head Office —
+            that is intentional.
           </p>
         ) : null}
       </section>

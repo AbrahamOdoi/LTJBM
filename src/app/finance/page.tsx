@@ -94,7 +94,7 @@ export default async function FinancePage() {
       <p className="text-xs text-[var(--lt-muted)]">
         Board totals update when payments are posted. Open{" "}
         <Link href="/reports" className="lt-link">
-          Board reports
+          Reports
         </Link>{" "}
         for Expected / Paid / Outstanding. Named givers stay on this surface.
       </p>
