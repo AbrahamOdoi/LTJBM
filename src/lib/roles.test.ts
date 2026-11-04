@@ -6,9 +6,11 @@ import {
   canAccessFinanceAggregateReports,
   canAccessFinanceDetailReports,
   canAccessGroups,
+  canAccessMedia,
   canAccessReporting,
   canWriteFinance,
   canWriteGroups,
+  canWriteMedia,
 } from "@/lib/roles";
 
 describe("RBAC individual-giving gate", () => {
@@ -50,5 +52,19 @@ describe("RBAC individual-giving gate", () => {
     assert.equal(canWriteGroups(Role.RecordsClerk), true);
     assert.equal(canWriteGroups(Role.PastoralBoard), false);
     assert.equal(canWriteGroups(Role.LeadershipCouncil), false);
+  });
+
+  it("opens Sermon library for staff; write for Clerk/Branch/Admin/Board; portal Member uses /portal", () => {
+    assert.equal(canAccessMedia(Role.RecordsClerk), true);
+    assert.equal(canAccessMedia(Role.FinancialSecretary), true);
+    assert.equal(canAccessMedia(Role.Member), false);
+    assert.equal(canWriteMedia(Role.PastoralBoard), true);
+    assert.equal(canWriteMedia(Role.FinancialSecretary), false);
+    assert.equal(canWriteMedia(Role.LeadershipCouncil), false);
+  });
+
+  it("never lets Branch Leader post HQ finance / GL", () => {
+    assert.equal(canAccessFinance(Role.BranchLeader), false);
+    assert.equal(canWriteFinance(Role.BranchLeader), false);
   });
 });

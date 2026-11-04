@@ -342,6 +342,48 @@ export function isGroupsPath(pathname: string): boolean {
   );
 }
 
+/**
+ * Sermon / media library — staff browse & manage; Member portal reads published only.
+ * Not a finance surface.
+ */
+export const MEDIA_ACCESS_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+  Role.PastoralBoard,
+  Role.LeadershipCouncil,
+  Role.FinancialSecretary,
+] as const;
+
+export const MEDIA_WRITE_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+  Role.PastoralBoard,
+] as const;
+
+export const MEDIA_ROUTE_PREFIXES = ["/media", "/api/media"] as const;
+
+export function canAccessMedia(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (MEDIA_ACCESS_ROLES as readonly string[]).includes(role);
+}
+
+export function canWriteMedia(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (MEDIA_WRITE_ROLES as readonly string[]).includes(role);
+}
+
+export function isMediaPath(pathname: string): boolean {
+  return MEDIA_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 export type DashboardProfile =
   | "membership"
   | "finance"

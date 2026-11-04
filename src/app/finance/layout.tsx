@@ -10,6 +10,9 @@ const subNav = [
   { href: "/finance/statements", label: "Statements" },
   { href: "/finance/batches", label: "Saturday collections" },
   { href: "/finance/arrears", label: "Dues arrears" },
+  { href: "/finance/ledger", label: "Ledger (GL)" },
+  { href: "/finance/budgets", label: "Budgets" },
+  { href: "/finance/expenses", label: "Expenses" },
 ];
 
 export default async function FinanceLayout({

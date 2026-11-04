@@ -6,6 +6,7 @@ import {
   canAccessEvents,
   canAccessFinance,
   canAccessGroups,
+  canAccessMedia,
   canAccessPastoral,
   canAccessReporting,
   isAdminPath,
@@ -13,6 +14,7 @@ import {
   isEventsPath,
   isFinancePath,
   isGroupsPath,
+  isMediaPath,
   isPastoralPath,
   isPortalPath,
   isReportingPath,
@@ -198,6 +200,18 @@ export const authConfig = {
         }
         return Response.redirect(
           new URL("/forbidden?reason=groups", request.nextUrl),
+        );
+      }
+
+      if (isMediaPath(pathname) && !canAccessMedia(role)) {
+        if (pathname.startsWith("/api/")) {
+          return Response.json(
+            { error: "Sermon library access denied." },
+            { status: 403 },
+          );
+        }
+        return Response.redirect(
+          new URL("/forbidden?reason=media", request.nextUrl),
         );
       }
 

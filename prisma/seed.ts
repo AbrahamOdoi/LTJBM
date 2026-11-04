@@ -461,6 +461,187 @@ async function seedDomainLists() {
   console.log(`Seeded ${domains.length} admin domain lists.`);
 }
 
+async function seedPhaseFSermonGl(opts: {
+  actorId: string;
+  mediaActorId: string;
+}) {
+  const chart: Array<{
+    code: string;
+    name: string;
+    type: "Asset" | "Liability" | "Equity" | "Income" | "Expense";
+  }> = [
+    { code: "1000", name: "Cash on hand", type: "Asset" },
+    { code: "1010", name: "Bank — operations", type: "Asset" },
+    { code: "1100", name: "Mobile money float", type: "Asset" },
+    { code: "2000", name: "Accounts payable", type: "Liability" },
+    { code: "3000", name: "Net assets / equity", type: "Equity" },
+    { code: "4000", name: "Tithes income", type: "Income" },
+    { code: "4010", name: "Offerings & thanksgiving", type: "Income" },
+    { code: "4020", name: "Special project income", type: "Income" },
+    { code: "4030", name: "Dues income", type: "Income" },
+    { code: "5000", name: "Ministry programmes", type: "Expense" },
+    { code: "5100", name: "Facilities & utilities", type: "Expense" },
+    { code: "5200", name: "Admin & office", type: "Expense" },
+    { code: "5300", name: "Outreach & missions", type: "Expense" },
+  ];
+
+  for (const row of chart) {
+    await prisma.glAccount.upsert({
+      where: { code: row.code },
+      update: {},
+      create: {
+        code: row.code,
+        name: row.name,
+        type: row.type,
+        isSystem: true,
+        isActive: true,
+      },
+    });
+  }
+
+  const cash = await prisma.glAccount.findUniqueOrThrow({
+    where: { code: "1010" },
+  });
+  const facilities = await prisma.glAccount.findUniqueOrThrow({
+    where: { code: "5100" },
+  });
+  const programmes = await prisma.glAccount.findUniqueOrThrow({
+    where: { code: "5000" },
+  });
+  const outreach = await prisma.glAccount.findUniqueOrThrow({
+    where: { code: "5300" },
+  });
+
+  const year = new Date().getUTCFullYear();
+  let budget = await prisma.budget.findFirst({
+    where: { name: `Ministry budget ${year}` },
+  });
+  if (!budget) {
+    budget = await prisma.budget.create({
+      data: {
+        name: `Ministry budget ${year}`,
+        fiscalYear: year,
+        periodStart: new Date(Date.UTC(year, 0, 1)),
+        periodEnd: new Date(Date.UTC(year, 11, 31)),
+        notes: "Demo HQ budget — aggregates only on Board reports.",
+        createdById: opts.actorId,
+        lines: {
+          create: [
+            { accountId: programmes.id, amount: 12000 },
+            { accountId: facilities.id, amount: 8000 },
+            { accountId: outreach.id, amount: 5000 },
+          ],
+        },
+      },
+    });
+  }
+
+  const expenseCount = await prisma.expense.count();
+  if (expenseCount === 0) {
+    const journal = await prisma.journalEntry.create({
+      data: {
+        entryDate: new Date(),
+        memo: "Demo utility payment",
+        reference: "EXP-DEMO-001",
+        status: "Posted",
+        createdById: opts.actorId,
+        postedById: opts.actorId,
+        postedAt: new Date(),
+        lines: {
+          create: [
+            {
+              accountId: facilities.id,
+              debit: 450,
+              credit: 0,
+              memo: "ECG / utilities",
+            },
+            {
+              accountId: cash.id,
+              debit: 0,
+              credit: 450,
+              memo: "Bank — operations",
+            },
+          ],
+        },
+      },
+    });
+    await prisma.expense.create({
+      data: {
+        expenseDate: new Date(),
+        description: "ECG / utilities (demo)",
+        amount: 450,
+        accountId: facilities.id,
+        payFromAccountId: cash.id,
+        vendor: "ECG",
+        reference: "EXP-DEMO-001",
+        journalEntryId: journal.id,
+        createdById: opts.actorId,
+      },
+    });
+  }
+
+  let series = await prisma.sermonSeries.findFirst({
+    where: { name: "Walking in Faith" },
+  });
+  if (!series) {
+    series = await prisma.sermonSeries.create({
+      data: {
+        name: "Walking in Faith",
+        description: "Demo series for the sermon library.",
+      },
+    });
+  }
+
+  const sermonCount = await prisma.sermon.count();
+  if (sermonCount === 0) {
+    await prisma.sermon.createMany({
+      data: [
+        {
+          title: "The Lord is my shepherd",
+          preacher: "Pastor Mensah",
+          preachedAt: new Date(Date.UTC(year, 9, 12)),
+          scripture: "Psalm 23",
+          seriesId: series.id,
+          audioUrl: "https://example.com/media/psalm23.mp3",
+          summary: "Comfort and guidance for the flock (demo).",
+          publishedToPortal: true,
+          createdById: opts.mediaActorId,
+          uploadMeta: {
+            fileName: "psalm23.mp3",
+            mimeType: "audio/mpeg",
+            storageKey: "sermons/demo/psalm23.mp3",
+            sizeBytes: 1024000,
+          },
+        },
+        {
+          title: "Faith that works",
+          preacher: "Rev. Adjei",
+          preachedAt: new Date(Date.UTC(year, 9, 19)),
+          scripture: "James 2:14-26",
+          seriesId: series.id,
+          videoUrl: "https://example.com/media/james2.mp4",
+          summary: "Living faith expressed in service (demo).",
+          publishedToPortal: true,
+          createdById: opts.mediaActorId,
+        },
+        {
+          title: "Staff training message",
+          preacher: "Pastor Mensah",
+          preachedAt: new Date(Date.UTC(year, 8, 5)),
+          scripture: "2 Timothy 2:15",
+          publishedToPortal: false,
+          summary: "Internal staff-only message (not on portal).",
+          createdById: opts.mediaActorId,
+        },
+      ],
+    });
+  }
+
+  console.log(
+    `Phase F seed: chart ${chart.length} accounts, budget ${budget.name}, sermons ready.`,
+  );
+}
+
 async function seedGroupsHub(opts: {
   hqId: string;
   eastId: string;
@@ -1281,13 +1462,21 @@ async function main() {
     sampleMemberId: portalMember.id,
   });
 
+  const financeUser = await prisma.user.findUniqueOrThrow({
+    where: { email: "finance@ltjbm.local" },
+  });
+  await seedPhaseFSermonGl({
+    actorId: financeUser.id,
+    mediaActorId: clerk.id,
+  });
+
   await prisma.auditLog.create({
     data: {
       action: "system.seed",
       entityType: "System",
       metadata: {
         message:
-          "Platform + members + finance + reporting + admin + Phase D + Phase E groups seed completed",
+          "Platform + members + finance + reporting + admin + Phase D/E + Phase F sermon/GL seed completed",
         hqBranchId: hq.id,
         financeDemoMembers: financeMembers.map((m) => m.memberNumber),
         boardTemplateId: boardTemplate.id,

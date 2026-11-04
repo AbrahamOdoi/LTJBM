@@ -6,11 +6,13 @@ import {
   canAccessFinance,
   canAccessFinanceAggregateReports,
   canAccessGroups,
+  canAccessMedia,
   canAccessMembers,
   canAccessPastoral,
   canAccessReporting,
   canWriteFinance,
   canWriteGroups,
+  canWriteMedia,
   canWriteMembers,
   canEditReportTemplates,
   dashboardProfileForRole,
@@ -44,6 +46,7 @@ export type NavSurface =
   | "pastoral"
   | "events"
   | "groups"
+  | "media"
   | "portal";
 
 export type RoleNavItem = {
@@ -75,7 +78,7 @@ export function roleNavItems(
       href: "/portal",
       label: "My portal",
       surface: "portal",
-      description: "Your profile and your contribution statement",
+      description: "Your profile, statement, and sermon library",
     });
     return items;
   }
@@ -120,6 +123,17 @@ export function roleNavItems(
     });
   }
 
+  if (canAccessMedia(role)) {
+    items.push({
+      href: "/media",
+      label: "Sermons",
+      surface: "media",
+      description: canWriteMedia(role)
+        ? "Sermon library — catalogue messages and series"
+        : "Browse the sermon and media library",
+    });
+  }
+
   if (canAccessPastoral(role)) {
     items.push({
       href: "/pastoral",
@@ -135,7 +149,7 @@ export function roleNavItems(
       label: "Contributions",
       surface: "finance",
       description: canWriteFinance(role)
-        ? "Record pledges, tithes, dues, and Saturday collection batches"
+        ? "Record pledges, tithes, dues, ledger, budgets, and Saturday batches"
         : "View Head Office contribution totals (read-only)",
     });
   }

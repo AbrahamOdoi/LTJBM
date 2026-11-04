@@ -6,6 +6,7 @@ import {
   canAccessEvents,
   canAccessFinance,
   canAccessGroups,
+  canAccessMedia,
   canAccessMembers,
   canAccessPastoral,
   canAccessReporting,
@@ -14,6 +15,7 @@ import {
   canWriteEvents,
   canWriteFinance,
   canWriteGroups,
+  canWriteMedia,
   canWriteMembers,
   type Role,
 } from "@/lib/roles";
@@ -188,6 +190,25 @@ export async function requireGroupsWrite() {
   if (!canWriteGroups(session.user.role)) {
     throw new AuthGuardError(
       "Groups write denied. Board/Council may view rosters and meeting logs only.",
+      403,
+    );
+  }
+  return session;
+}
+
+export async function requireMediaAccess() {
+  const session = await requireSession();
+  if (!canAccessMedia(session.user.role)) {
+    throw new AuthGuardError("Sermon library access denied.", 403);
+  }
+  return session;
+}
+
+export async function requireMediaWrite() {
+  const session = await requireMediaAccess();
+  if (!canWriteMedia(session.user.role)) {
+    throw new AuthGuardError(
+      "Sermon library write denied for this role.",
       403,
     );
   }
