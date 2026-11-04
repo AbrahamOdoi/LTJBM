@@ -7,7 +7,17 @@ import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-const SEED_PASSWORD = process.env.SEED_PASSWORD ?? "ChangeMe123!";
+const DEFAULT_SEED_PASSWORD = "ChangeMe123!";
+const SEED_PASSWORD = process.env.SEED_PASSWORD ?? DEFAULT_SEED_PASSWORD;
+
+if (
+  process.env.NODE_ENV === "production" &&
+  SEED_PASSWORD === DEFAULT_SEED_PASSWORD
+) {
+  throw new Error(
+    "Refusing to seed in production with the default demo password. Set SEED_PASSWORD to a strong unique value.",
+  );
+}
 
 const demoUsers: Array<{
   email: string;
@@ -843,7 +853,13 @@ async function main() {
   const memberCount = await prisma.member.count();
   console.log("Seed complete.");
   console.log(`Member count: ${memberCount}`);
-  console.log(`Default password for demo users: ${SEED_PASSWORD}`);
+  if (SEED_PASSWORD === DEFAULT_SEED_PASSWORD) {
+    console.log(
+      "Demo password: ChangeMe123! (LOCAL DEMO ONLY — override with SEED_PASSWORD; never reuse in staging/production)",
+    );
+  } else {
+    console.log("Demo password: (from SEED_PASSWORD env)");
+  }
   console.log("Demo users:");
   for (const u of demoUsers) {
     console.log(`  - ${u.email} (${u.role})`);

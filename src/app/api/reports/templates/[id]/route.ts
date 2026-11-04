@@ -131,5 +131,5 @@ export async function PATCH(request: Request, context: Ctx) {
       { error: "Provide layout, addField, or addChart" },
       { status: 400 },
     );
-  });
+  }, request);
 }

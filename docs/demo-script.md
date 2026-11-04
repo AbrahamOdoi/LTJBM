@@ -3,7 +3,7 @@
 **Audience:** Church Data Centre Team (Demo Day)  
 **Source scenarios:** Vendor design brief §8  
 **Demo DB:** ≥100 seeded members (`npm run db:seed` → 121 biodata + FIN-* = 124 total on integrated `main`)  
-**Default password:** `ChangeMe123!` (override with `SEED_PASSWORD`)
+**Default password:** `ChangeMe123!` (**local demo only** — override with `SEED_PASSWORD`; never reuse in staging/production)
 
 ### Demo users
 
@@ -147,7 +147,7 @@ All Steps 1–15 are runnable on current `main`. Automated smoke: `npm run test:
 | --- | --- |
 | **Role** | Clerk → BranchLeader → PastoralBoard |
 | **Path** | `/members`, `/finance`, `/admin`, `/reports`, `/forbidden` |
-| **Steps** | 1. **Clerk:** `/members` OK; `/finance` → `/forbidden?reason=finance`; `/admin` → `/forbidden?reason=admin`; `/reports` → `/forbidden?reason=reporting`; `/api/finance/health` → 403. 2. **Branch:** `/members` OK (East Legon only); `/finance` forbidden. 3. **Board:** can open HQ finance **read** surfaces; aggregated `/reports`. |
+| **Steps** | 1. **Clerk:** `/members` OK; `/finance` → `/forbidden?reason=finance`; `/admin` → `/forbidden?reason=admin`; `/reports` → `/forbidden?reason=reporting`; `/api/finance/health` → 403. 2. **Branch:** `/members` OK (East Legon only); `/finance` forbidden. 3. **Board:** `/reports` OK (aggregates); `/finance` → `/forbidden?reason=finance` (individual giving is Finance/Admin only). 
 | **Expected** | Allow/deny matches role matrix; individual giving not exposed to unauthorised roles. |
 | **Checklist** | `S8-12` |
 
@@ -242,7 +242,7 @@ HTTP session smokes against local `npm run dev` + Postgres seed (124 members).
 | S8-09 | **PASS** | Payment 201; Board `totals.paid` 2700 → 2775 without rebuild |
 | S8-10 | **PASS** | `POST /api/reports/schedules/run` with cron secret → `ok:true` |
 | S8-11 | **PASS** | Admin PATCH addField reflected on Board template |
-| S8-12 | **PASS** | Clerk finance/admin/reports forbidden; Branch finance deny; Board `/finance` 200; finance health `{ok:true}` |
+| S8-12 | **PASS** (security harden) | Clerk finance/admin/reports forbidden; Branch finance deny; Board `/reports` OK and `/finance` forbidden; Finance `/finance` + health `{ok:true}` |
 | S8-13 | **PASS** | Admin CSV/snapshot 200; clerk export 403; export/backup pages OK |
 | S8-14 | **PASS** | Dashboard kinds include Pledge, Tithe, Dues, SpecialProject, Thanksgiving |
 | S8-15 | **PASS** | Transfer UI on member detail |

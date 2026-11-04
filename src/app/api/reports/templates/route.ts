@@ -70,5 +70,5 @@ export async function POST(request: Request) {
       id: created.id,
       templates,
     });
-  });
+  }, request);
 }

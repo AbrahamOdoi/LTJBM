@@ -26,10 +26,10 @@ Reporting Phase A/B: Board/Council live dashboards, monthly Board email
 | --- | --- |
 | `RecordsClerk` | Biodata only — **no finance / reporting** |
 | `BranchLeader` | Scoped to assigned branch(es); no finance/reporting by default |
-| `FinancialSecretary` | HQ finance read/write; may view reports |
-| `PastoralBoard` | Aggregated Board dashboard (kind rollups) |
-| `LeadershipCouncil` | Aggregated Council dashboard (+ branch/period) |
-| `Admin` | Full access incl. report template edit |
+| `FinancialSecretary` | HQ finance read/write (individual giving); may view reports |
+| `PastoralBoard` | Aggregated Board dashboard only (`/reports`) — **no `/finance`** |
+| `LeadershipCouncil` | Aggregated Council dashboard (`/reports`) — **no `/finance`** |
+| `Admin` | Full access incl. finance + report template edit |
 
 ## Prerequisites
 
@@ -77,7 +77,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Demo users (after seed)
 
-Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
+**LOCAL DEMO ONLY:** password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).  
+Never reuse the default in staging/production — `npm run db:seed` refuses that default when `NODE_ENV=production`.
 
 | Email | Role |
 | --- | --- |
@@ -92,15 +93,17 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 
 1. Sign in as `clerk@ltjbm.local` → open `/finance` → redirected to `/forbidden?reason=finance`; `/reports` → `/forbidden?reason=reporting`
 2. Sign in as `finance@ltjbm.local` → `/finance` loads; `GET /api/finance/health` returns `{ ok: true }`
-3. Sign in as `clerk@ltjbm.local` → `/members` full register/update/transfer/print
-4. Sign in as `branch@ltjbm.local` → `/members` scoped to East Legon only
-5. Finance HQ screens: `/finance/obligations`, `/finance/batches`, `/finance/arrears`
-6. Reporting consume contract: `GET /api/finance/balances` (Expected / Paid / Outstanding by kind)
-7. Sign in as `board@ltjbm.local` → `/reports` shows kind rollups (auto-refresh after payments)
-8. Sign in as `council@ltjbm.local` → `/reports` also shows branch + period breakdowns
-9. Sign in as `admin@ltjbm.local` → `/reports/templates` add field/chart; `/reports/schedules` run email
-10. Sign in as `admin@ltjbm.local` → `/admin` domains/users/export/backup; clerk hitting `/admin` → forbidden
-11. Admin: download `/api/admin/export/members?format=csv` and logical backup snapshot
+3. Sign in as `board@ltjbm.local` → `/finance` → forbidden; `/reports` loads aggregates only
+4. Sign in as `clerk@ltjbm.local` → `/members` full register/update/transfer/print
+5. Sign in as `branch@ltjbm.local` → `/members` scoped to East Legon only
+6. Finance HQ screens: `/finance/obligations`, `/finance/batches`, `/finance/arrears` (Finance/Admin only)
+7. Reporting consume contract: `GET /api/finance/balances` (Expected / Paid / Outstanding by kind) — Finance/Admin; Board uses `/api/reports/dashboard`
+8. Sign in as `board@ltjbm.local` → `/reports` shows kind rollups (auto-refresh after payments)
+9. Sign in as `council@ltjbm.local` → `/reports` also shows branch + period breakdowns
+10. Sign in as `admin@ltjbm.local` → `/reports/templates` add field/chart; `/reports/schedules` run email
+11. Sign in as `admin@ltjbm.local` → `/admin` domains/users/export/backup; clerk hitting `/admin` → forbidden
+12. Admin: download `/api/admin/export/members?format=csv` and logical backup snapshot
+13. Unauthenticated `GET /uploads/members/<photo>` → redirected to login (photos are PII)
 
 ### Monthly Board email (demo)
 

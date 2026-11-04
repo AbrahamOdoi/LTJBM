@@ -18,6 +18,7 @@
     "test:reporting": "tsx --test src/lib/reporting/*.test.ts",
     "test:smoke": "tsx scripts/smoke-section8.ts",
     "smoke:finance": "tsx scripts/smoke-finance.ts",
+    "test:security": "tsx --test src/lib/roles.test.ts",
     "report:monthly": "tsx scripts/send-board-report.ts",
     "backup:db": "bash scripts/backup-db.sh",
     "restore:db": "bash scripts/restore-db.sh",

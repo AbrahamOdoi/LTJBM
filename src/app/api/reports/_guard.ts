@@ -5,6 +5,10 @@ import {
   requireReportingAccess,
 } from "@/lib/auth-guards";
 import { ReportingValidationError } from "@/lib/reporting/service";
+import {
+  assertSameOriginMutation,
+  SecurityGuardError,
+} from "@/lib/security";
 
 export async function withReportingAccess<T>(
   handler: () => Promise<T>,
@@ -19,8 +23,10 @@ export async function withReportingAccess<T>(
 
 export async function withReportTemplateEdit<T>(
   handler: () => Promise<T>,
+  request?: Request,
 ): Promise<T | NextResponse> {
   try {
+    if (request) assertSameOriginMutation(request);
     await requireReportTemplateEdit();
     return await handler();
   } catch (error) {
@@ -29,7 +35,7 @@ export async function withReportTemplateEdit<T>(
 }
 
 export function reportingErrorResponse(error: unknown): NextResponse {
-  if (error instanceof AuthGuardError) {
+  if (error instanceof AuthGuardError || error instanceof SecurityGuardError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
   if (error instanceof ReportingValidationError) {

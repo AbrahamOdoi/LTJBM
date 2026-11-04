@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
 import {
   canAccessAdmin,
   canAccessFinance,
@@ -20,11 +21,25 @@ export class AuthGuardError extends Error {
   }
 }
 
+/**
+ * Require a signed-in user and re-check DB for isActive + current role.
+ * JWT alone is not enough after admin deactivates or demotes a user.
+ */
 export async function requireSession() {
   const session = await auth();
   if (!session?.user?.id) {
     throw new AuthGuardError("Authentication required", 401);
   }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isActive: true, role: true },
+  });
+  if (!dbUser || !dbUser.isActive) {
+    throw new AuthGuardError("Account deactivated or not found", 401);
+  }
+
+  session.user.role = dbUser.role as Role;
   return session;
 }
 
