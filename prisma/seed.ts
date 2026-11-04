@@ -387,14 +387,75 @@ async function main() {
   // Keep duesArrears with zero payments for arrears query
   void duesArrears;
 
+  // ── Reporting: Board template + monthly schedule (Reporting-owned)
+  const boardLayout = {
+    title: "Pastoral Board — Expected / Paid / Outstanding",
+    audience: "Both",
+    fields: [
+      { id: "f-expected", label: "Expected", source: "totals.expected" },
+      { id: "f-paid", label: "Paid", source: "totals.paid" },
+      { id: "f-outstanding", label: "Outstanding", source: "totals.outstanding" },
+      { id: "f-by-kind", label: "By obligation kind", source: "byKind" },
+    ],
+    charts: [
+      {
+        id: "c-kind-paid",
+        type: "bar",
+        title: "Paid by kind",
+        metric: "paid",
+        groupBy: "kind",
+      },
+    ],
+  };
+
+  let boardTemplate = await prisma.reportTemplate.findFirst({
+    where: { name: "Board monthly rollup" },
+  });
+  if (boardTemplate) {
+    boardTemplate = await prisma.reportTemplate.update({
+      where: { id: boardTemplate.id },
+      data: {
+        description:
+          "Default Pastoral Board / Leadership Council Expected·Paid·Outstanding template",
+        layout: boardLayout,
+        isActive: true,
+      },
+    });
+  } else {
+    boardTemplate = await prisma.reportTemplate.create({
+      data: {
+        name: "Board monthly rollup",
+        description:
+          "Default Pastoral Board / Leadership Council Expected·Paid·Outstanding template",
+        layout: boardLayout,
+        isActive: true,
+      },
+    });
+  }
+
+  const existingSchedule = await prisma.reportSchedule.findFirst({
+    where: { reportTemplateId: boardTemplate.id },
+  });
+  if (!existingSchedule) {
+    await prisma.reportSchedule.create({
+      data: {
+        reportTemplateId: boardTemplate.id,
+        cronExpression: "0 8 1 * *",
+        distributionList: ["board@ltjbm.local", "council@ltjbm.local"],
+        isActive: true,
+      },
+    });
+  }
+
   await prisma.auditLog.create({
     data: {
       action: "system.seed",
       entityType: "System",
       metadata: {
-        message: "Phase A platform + finance seed completed",
+        message: "Phase A platform + finance + reporting seed completed",
         hqBranchId: hq.id,
         financeDemoMembers: financeMembers.map((m) => m.memberNumber),
+        boardTemplateId: boardTemplate.id,
       },
     },
   });
@@ -406,6 +467,7 @@ async function main() {
     console.log(`  - ${u.email} (${u.role})`);
   }
   console.log("Finance demo members: FIN-001, FIN-002, FIN-003");
+  console.log(`Board report template: ${boardTemplate.name} (${boardTemplate.id})`);
 }
 
 main()

@@ -51,3 +51,52 @@ export function isFinancePath(pathname: string): boolean {
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
+
+/**
+ * Board / Council dashboards and reporting APIs.
+ * FinancialSecretary may view (same aggregates as finance overview).
+ * RecordsClerk / BranchLeader stay out — no finance aggregates.
+ */
+export const REPORTING_ACCESS_ROLES: readonly Role[] = [
+  Role.FinancialSecretary,
+  Role.PastoralBoard,
+  Role.LeadershipCouncil,
+  Role.Admin,
+] as const;
+
+/** Data Centre / Admin may edit Board report templates and schedules. */
+export const REPORT_TEMPLATE_EDIT_ROLES: readonly Role[] = [
+  Role.Admin,
+] as const;
+
+export const REPORTING_ROUTE_PREFIXES = ["/reports", "/api/reports"] as const;
+
+export function canAccessReporting(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (REPORTING_ACCESS_ROLES as readonly string[]).includes(role);
+}
+
+export function canEditReportTemplates(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (REPORT_TEMPLATE_EDIT_ROLES as readonly string[]).includes(role);
+}
+
+export function isReportingPath(pathname: string): boolean {
+  return REPORTING_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+/** Pastoral Board: kind rollups; Council: also branch / period breakdowns. */
+export function reportingViewMode(
+  role: Role | string | undefined | null,
+): "board" | "council" | "admin" | null {
+  if (role === Role.PastoralBoard) return "board";
+  if (role === Role.LeadershipCouncil) return "council";
+  if (role === Role.Admin || role === Role.FinancialSecretary) return "admin";
+  return null;
+}
