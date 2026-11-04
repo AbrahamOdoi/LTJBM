@@ -26,7 +26,8 @@ export type StandardReportId =
   | "dues-arrears"
   | "contributions-summary"
   | "saturday-batch-variance"
-  | "board-expected-paid-outstanding";
+  | "board-expected-paid-outstanding"
+  | "board-budget-vs-actual";
 
 export type ReportColumn = { key: string; label: string };
 export type ReportRow = Record<string, string | number | boolean | null>;
@@ -94,6 +95,14 @@ const CATALOG: StandardReportMeta[] = [
     category: "board",
     filters: ["periodStart", "periodEnd", "kind"],
   },
+  {
+    id: "board-budget-vs-actual",
+    name: "Board budget vs actual (accounts)",
+    description:
+      "Active budget lines vs posted ledger actuals by account — aggregates only, never individual givers.",
+    category: "board",
+    filters: [],
+  },
 ];
 
 export function listStandardReportCatalog(role: Role | string): StandardReportMeta[] {
@@ -119,6 +128,7 @@ export function canRunStandardReport(
       return canAccessFinanceDetailReports(role);
     case "contributions-summary":
     case "board-expected-paid-outstanding":
+    case "board-budget-vs-actual":
       return canAccessFinanceAggregateReports(role);
     default:
       return false;
@@ -178,6 +188,12 @@ export async function runStandardReport(
         meta,
         generatedAt,
         ...(await runBoardRollup(filters)),
+      };
+    case "board-budget-vs-actual":
+      return {
+        meta,
+        generatedAt,
+        ...(await runBoardBudgetVsActual()),
       };
     default:
       throw new ReportingValidationError("Unknown standard report.", 404);
@@ -425,5 +441,49 @@ async function runBoardRollup(filters: RunStandardFilters) {
     ],
     summary:
       "Aggregates only — individual giving is not included on Board reports.",
+  };
+}
+
+/**
+ * Budget vs actual by GL account — Board-safe.
+ * Never includes member / giver identity (account codes and amounts only).
+ */
+async function runBoardBudgetVsActual() {
+  const { listBudgets, getBudgetVsActual } = await import("@/lib/gl/service");
+  const budgets = await listBudgets();
+  const active = budgets.find((b) => b.isActive) ?? budgets[0];
+  if (!active) {
+    return {
+      columns: [
+        { key: "code", label: "Account code" },
+        { key: "name", label: "Account" },
+        { key: "budget", label: "Budget" },
+        { key: "actual", label: "Actual" },
+        { key: "variance", label: "Variance" },
+      ] satisfies ReportColumn[],
+      rows: [] as ReportRow[],
+      summary: "No HQ budgets defined yet.",
+    };
+  }
+
+  const vs = await getBudgetVsActual(active.id);
+  return {
+    columns: [
+      { key: "code", label: "Account code" },
+      { key: "name", label: "Account" },
+      { key: "type", label: "Type" },
+      { key: "budget", label: "Budget" },
+      { key: "actual", label: "Actual" },
+      { key: "variance", label: "Variance" },
+    ] satisfies ReportColumn[],
+    rows: vs.rows.map((r) => ({
+      code: r.code,
+      name: r.name,
+      type: r.type,
+      budget: r.budget,
+      actual: r.actual,
+      variance: r.variance,
+    })) satisfies ReportRow[],
+    summary: `${vs.budget.name} (${vs.budget.fiscalYear}) — account aggregates only; no individual givers.`,
   };
 }

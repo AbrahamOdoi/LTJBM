@@ -26,6 +26,7 @@ export default async function PortalHomePage() {
       subNav={[
         { href: "/portal", label: "My profile" },
         { href: "/portal/statement", label: "My statement" },
+        { href: "/portal/sermons", label: "Sermons" },
         { href: "/give", label: "Give online" },
       ]}
     >
@@ -78,9 +79,14 @@ export default async function PortalHomePage() {
               </dd>
             </div>
           </dl>
-          <Link href="/portal/statement" className="lt-btn-primary inline-flex">
-            View my contribution statement
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/portal/statement" className="lt-btn-primary inline-flex">
+              View my contribution statement
+            </Link>
+            <Link href="/portal/sermons" className="lt-btn-secondary inline-flex">
+              Browse sermons
+            </Link>
+          </div>
         </section>
 
         <PortalProfileForm

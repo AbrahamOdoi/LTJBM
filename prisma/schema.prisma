@@ -45,6 +45,11 @@ model User {
   attendanceMarked  AttendanceRecord[] @relation("AttendanceMarker")
   groupMeetingsLogged GroupMeetingLog[] @relation("GroupMeetingRecorder")
   groupAnnouncements  GroupAnnouncement[] @relation("GroupAnnouncementAuthor")
+  sermonsCreated      Sermon[]             @relation("SermonAuthor")
+  journalEntriesCreated JournalEntry[]    @relation("JournalCreator")
+  journalEntriesPosted  JournalEntry[]    @relation("JournalPoster")
+  budgetsCreated      Budget[]            @relation("BudgetCreator")
+  expensesCreated     Expense[]           @relation("ExpenseCreator")
 }
 
 /// Branch / unit scope for Branch Leaders (and similar limited roles).
@@ -313,6 +318,7 @@ model Obligation {
   fellowshipMinistry   FellowshipMinistry? @relation(fields: [fellowshipMinistryId], references: [id], onDelete: SetNull)
   payments             Payment[]
   onlineCheckouts      OnlineGivingCheckout[]
+  journalEntries       JournalEntry[]
 
   @@index([memberId])
   @@index([obligationTypeId, periodStart])
@@ -348,6 +354,8 @@ model Payment {
   obligation    Obligation       @relation(fields: [obligationId], references: [id])
   batch         CollectionBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
   onlineCheckout OnlineGivingCheckout?
+  /// HQ GL reconciliation link (never exposed on Board reports).
+  journalEntry  JournalEntry?
 
   @@index([obligationId])
   @@index([batchId])
@@ -917,4 +925,180 @@ model OnlineGivingCheckout {
   @@index([status, createdAt])
   @@index([memberId])
   @@index([provider])
+}
+
+// ─── Phase F — Sermon / media library ────────────────────────────────────────
+
+model SermonSeries {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sermons     Sermon[]
+
+  @@index([name])
+}
+
+model Sermon {
+  id                String        @id @default(cuid())
+  title             String
+  preacher          String
+  preachedAt        DateTime
+  scripture         String?
+  seriesId          String?
+  audioUrl          String?
+  videoUrl          String?
+  /// Upload metadata only (filename, mime, sizeBytes, storageKey) — not binary.
+  uploadMeta        Json?
+  summary           String?
+  /// When true, Member portal may browse this sermon (read-only).
+  publishedToPortal Boolean       @default(true)
+  createdById       String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  series            SermonSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  createdBy         User?         @relation("SermonAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([preachedAt])
+  @@index([seriesId])
+  @@index([preacher])
+  @@index([publishedToPortal, preachedAt])
+}
+
+// ─── Phase F — Full GL / budgets / expenses (HQ-only posting) ────────────────
+
+enum GlAccountType {
+  Asset
+  Liability
+  Equity
+  Income
+  Expense
+}
+
+enum JournalStatus {
+  Draft
+  Posted
+  Void
+}
+
+/// Chart of accounts — Head Office Financial Secretary / Admin only for posting.
+model GlAccount {
+  id          String        @id @default(cuid())
+  code        String        @unique
+  name        String
+  type        GlAccountType
+  parentId    String?
+  description String?
+  isActive    Boolean       @default(true)
+  isSystem    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  parent      GlAccount?    @relation("GlAccountTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    GlAccount[]   @relation("GlAccountTree")
+  journalLines JournalLine[]
+  budgetLines BudgetLine[]
+  expenses    Expense[]     @relation("ExpenseGlAccount")
+  payFromExpenses Expense[] @relation("ExpensePayFromAccount")
+
+  @@index([type, isActive])
+  @@index([parentId])
+}
+
+/// Double-entry journal. Posted only by HQ finance roles — never branch treasurers.
+model JournalEntry {
+  id           String        @id @default(cuid())
+  entryDate    DateTime
+  memo         String?
+  reference    String?
+  status       JournalStatus @default(Draft)
+  createdById  String?
+  postedById   String?
+  postedAt     DateTime?
+  /// Optional reconcile link to a contribution payment (HQ detail only).
+  paymentId    String?       @unique
+  obligationId String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  createdBy    User?         @relation("JournalCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  postedBy     User?         @relation("JournalPoster", fields: [postedById], references: [id], onDelete: SetNull)
+  payment      Payment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  obligation   Obligation?   @relation(fields: [obligationId], references: [id], onDelete: SetNull)
+  lines        JournalLine[]
+  expense      Expense?
+
+  @@index([entryDate])
+  @@index([status, entryDate])
+  @@index([obligationId])
+}
+
+model JournalLine {
+  id             String       @id @default(cuid())
+  journalEntryId String
+  accountId      String
+  debit          Decimal      @default(0) @db.Decimal(12, 2)
+  credit         Decimal      @default(0) @db.Decimal(12, 2)
+  memo           String?
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account        GlAccount    @relation(fields: [accountId], references: [id])
+
+  @@index([journalEntryId])
+  @@index([accountId])
+}
+
+model Budget {
+  id          String       @id @default(cuid())
+  name        String
+  fiscalYear  Int
+  periodStart DateTime
+  periodEnd   DateTime
+  notes       String?
+  isActive    Boolean      @default(true)
+  createdById String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   User?        @relation("BudgetCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  lines       BudgetLine[]
+
+  @@index([fiscalYear])
+  @@index([periodStart, periodEnd])
+}
+
+model BudgetLine {
+  id        String    @id @default(cuid())
+  budgetId  String
+  accountId String
+  amount    Decimal   @db.Decimal(12, 2)
+  notes     String?
+  budget    Budget    @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  account   GlAccount @relation(fields: [accountId], references: [id])
+
+  @@unique([budgetId, accountId])
+  @@index([accountId])
+}
+
+/// Simplified expense entry — posts a balanced journal (Expense debit / Cash credit) at HQ only.
+model Expense {
+  id               String        @id @default(cuid())
+  expenseDate      DateTime
+  description      String
+  amount           Decimal       @db.Decimal(12, 2)
+  currency         String        @default("GHS")
+  accountId        String
+  payFromAccountId String
+  vendor           String?
+  reference        String?
+  notes            String?
+  journalEntryId   String?       @unique
+  createdById      String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  account          GlAccount     @relation("ExpenseGlAccount", fields: [accountId], references: [id])
+  payFromAccount   GlAccount     @relation("ExpensePayFromAccount", fields: [payFromAccountId], references: [id])
+  journalEntry     JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  createdBy        User?         @relation("ExpenseCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([expenseDate])
+  @@index([accountId])
 }

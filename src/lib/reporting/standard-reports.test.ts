@@ -33,6 +33,10 @@ describe("standard report catalog RBAC", () => {
       canRunStandardReport(Role.PastoralBoard, "board-expected-paid-outstanding"),
       true,
     );
+    assert.equal(
+      canRunStandardReport(Role.PastoralBoard, "board-budget-vs-actual"),
+      true,
+    );
     assert.equal(canRunStandardReport(Role.PastoralBoard, "dues-arrears"), false);
     assert.equal(
       canRunStandardReport(Role.PastoralBoard, "saturday-batch-variance"),
