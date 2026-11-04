@@ -19,15 +19,20 @@ export default async function EventsPage() {
             Church calendar
           </h2>
           <p className="mt-1 text-sm text-[var(--lt-muted)]">
-            Services, meetings, and special gatherings. Volunteer scheduling is out of
-            scope for this CDMS.
+            Services, meetings, and special gatherings. Book rooms under Rooms.
+            Volunteer scheduling stays out of scope.
           </p>
         </div>
-        {writeOk ? (
-          <Link href="/events/new" className="lt-btn-primary">
-            Add event
+        <div className="flex flex-wrap gap-2">
+          <Link href="/events/rooms" className="lt-btn-secondary">
+            Rooms
           </Link>
-        ) : null}
+          {writeOk ? (
+            <Link href="/events/new" className="lt-btn-primary">
+              Add event
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       {events.length === 0 ? (

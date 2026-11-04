@@ -96,7 +96,7 @@ export function roleNavItems(
       href: "/attendance",
       label: "Attendance",
       surface: "attendance",
-      description: "Manual service and cell check-in",
+      description: "Service and cell check-in (manual, kiosk, QR)",
     });
   }
 

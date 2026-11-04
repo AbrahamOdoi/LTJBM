@@ -19,14 +19,20 @@ export default async function AttendanceIndexPage() {
             Attendance sessions
           </h2>
           <p className="mt-1 text-sm text-[var(--lt-muted)]">
-            Named check-in for services and cells. Headcount optional.
+            Named check-in for services and cells — manual, kiosk tablet, or mobile QR.
+            Headcount optional.
           </p>
         </div>
-        {writeOk ? (
-          <Link href="/attendance/new" className="lt-btn-primary">
-            New session
+        <div className="flex flex-wrap gap-2">
+          <Link href="/attendance/trends" className="lt-btn-secondary">
+            Trends &amp; alerts
           </Link>
-        ) : null}
+          {writeOk ? (
+            <Link href="/attendance/new" className="lt-btn-primary">
+              New session
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       {sessions.length === 0 ? (

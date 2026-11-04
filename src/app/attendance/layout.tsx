@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app-shell";
 const subNav = [
   { href: "/attendance", label: "Sessions" },
   { href: "/attendance/new", label: "New session" },
+  { href: "/attendance/trends", label: "Trends & alerts" },
 ];
 
 export default async function AttendanceLayout({
@@ -16,7 +17,7 @@ export default async function AttendanceLayout({
   return (
     <AppShell
       title="Attendance"
-      subtitle="Manual service and cell check-in (QR / kiosk later)."
+      subtitle="Service and cell check-in — manual, kiosk, and mobile QR."
       role={session?.user?.role}
       userName={session?.user?.name}
       active="attendance"

@@ -8,8 +8,11 @@ import {
   requireAttendanceWrite,
 } from "@/lib/auth-guards";
 import {
+  checkInByToken,
   createAttendanceSession,
+  ensureSessionCheckInToken,
   markAttendance,
+  setSessionKioskEnabled,
 } from "@/lib/attendance/service";
 
 export type AttendanceActionResult =
@@ -71,6 +74,14 @@ export async function markPresentAction(formData: FormData) {
   const session = await requireAttendanceWrite();
   const sessionId = String(formData.get("sessionId") || "");
   const memberId = String(formData.get("memberId") || "");
+  const sourceRaw = String(formData.get("source") || "Manual");
+  const source =
+    sourceRaw === "Kiosk" ||
+    sourceRaw === "Mobile" ||
+    sourceRaw === "Qr" ||
+    sourceRaw === "Manual"
+      ? sourceRaw
+      : "Manual";
   if (!sessionId || !memberId) return;
 
   await markAttendance({
@@ -78,6 +89,71 @@ export async function markPresentAction(formData: FormData) {
     memberId,
     present: true,
     actorId: session.user.id,
+    source,
   });
   revalidatePath(`/attendance/${sessionId}`);
+  revalidatePath(`/attendance/${sessionId}/kiosk`);
+}
+
+export async function issueCheckInTokenAction(formData: FormData) {
+  const session = await requireAttendanceWrite();
+  const sessionId = String(formData.get("sessionId") || "");
+  if (!sessionId) return;
+  await ensureSessionCheckInToken(sessionId, session.user.id);
+  revalidatePath(`/attendance/${sessionId}`);
+  revalidatePath(`/attendance/${sessionId}/kiosk`);
+}
+
+export async function toggleKioskAction(formData: FormData) {
+  const session = await requireAttendanceWrite();
+  const sessionId = String(formData.get("sessionId") || "");
+  const enabled = String(formData.get("enabled") || "") === "1";
+  if (!sessionId) return;
+  await setSessionKioskEnabled(sessionId, enabled, session.user.id);
+  revalidatePath(`/attendance/${sessionId}`);
+  revalidatePath(`/attendance/${sessionId}/kiosk`);
+}
+
+export type PublicCheckInResult =
+  | {
+      ok: true;
+      memberName: string;
+      memberNumber: string | null;
+      sessionLabel: string;
+    }
+  | { ok: false; error: string };
+
+/** Public mobile / QR check-in (no staff session required). */
+export async function publicCheckInAction(
+  _prev: PublicCheckInResult | null,
+  formData: FormData,
+): Promise<PublicCheckInResult> {
+  const token = String(formData.get("token") || "").trim();
+  const memberNumber = String(formData.get("memberNumber") || "").trim();
+  const sourceRaw = String(formData.get("source") || "Mobile");
+  const source =
+    sourceRaw === "Qr" || sourceRaw === "Mobile" || sourceRaw === "Kiosk"
+      ? sourceRaw
+      : "Mobile";
+
+  if (!token || !memberNumber) {
+    return { ok: false, error: "Session and member number are required." };
+  }
+
+  const result = await checkInByToken({
+    token,
+    memberNumber,
+    source,
+  });
+
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  return {
+    ok: true,
+    memberName: `${result.member?.firstName ?? ""} ${result.member?.lastName ?? ""}`.trim(),
+    memberNumber: result.member?.memberNumber ?? null,
+    sessionLabel: result.session.label,
+  };
 }
