@@ -163,6 +163,7 @@ async function seedMembers() {
   const existingCount = await prisma.member.count();
   if (existingCount >= 100) {
     console.log(`Members already seeded (${existingCount}); skipping biodata bulk.`);
+    await attachDemoMemberPhotos();
     return;
   }
 
@@ -206,6 +207,8 @@ async function seedMembers() {
         country: branch.country,
         status: i % 37 === 0 ? "Inactive" : "Active",
         branchId: branch.id,
+        // First 24 members get demo SVG placeholders under public/uploads/members/
+        photoKey: i < 24 ? `demo-${String(i + 1).padStart(2, "0")}.svg` : null,
       },
     });
 
@@ -314,6 +317,31 @@ async function seedMembers() {
   }
 
   console.log(`Seeded ${created} members (total biodata demo ≥100).`);
+  await attachDemoMemberPhotos();
+}
+
+/**
+ * Attach SVG initials placeholders so the member register shows photos on first page.
+ * Re-applies to the first 24 members alphabetically (demo visibility).
+ */
+async function attachDemoMemberPhotos() {
+  const top = await prisma.member.findMany({
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    take: 24,
+    select: { id: true },
+  });
+  let attached = 0;
+  for (let i = 0; i < top.length; i++) {
+    const key = `demo-${String(i + 1).padStart(2, "0")}.svg`;
+    await prisma.member.update({
+      where: { id: top[i]!.id },
+      data: { photoKey: key },
+    });
+    attached += 1;
+  }
+  if (attached > 0) {
+    console.log(`Attached ${attached} demo member photo placeholders (A–Z first page).`);
+  }
 }
 
 async function seedDomainLists() {

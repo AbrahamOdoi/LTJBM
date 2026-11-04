@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DataTable, DataTableFilterBar } from "@/components/data-table";
+import { MemberAvatar } from "@/components/member-avatar";
 import { MembersAppShell } from "@/components/members/app-shell";
 import { requireMembersAccess } from "@/lib/auth-guards";
 import { buildSearchParams, parsePageParams } from "@/lib/data-table";
 import { canWriteMembers } from "@/lib/roles";
-import { photoPublicUrl } from "@/lib/members/photos";
 import {
   listBranchesForUser,
   listCellsForBranches,
@@ -153,8 +153,7 @@ export default async function MembersListPage({
 
       <DataTable
         columns={[
-          { key: "photo", header: "Photo" },
-          { key: "name", header: "Name" },
+          { key: "member", header: "Member" },
           { key: "number", header: "Number" },
           { key: "branch", header: "Branch" },
           { key: "groups", header: "Groups" },
@@ -178,30 +177,24 @@ export default async function MembersListPage({
           noun: "members",
         }}
         renderCell={(m, key) => {
-          const photo = photoPublicUrl(m.photoKey);
           const groups = m.groups
             .map((g) => g.cell?.name ?? g.fellowshipMinistry?.name)
             .filter(Boolean)
             .join(", ");
           switch (key) {
-            case "photo":
-              return photo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={photo}
-                  alt=""
-                  className="h-10 w-10 rounded object-cover"
-                />
-              ) : (
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded bg-[#e8efeB] text-xs text-[var(--lt-muted)]">
-                  —
-                </span>
-              );
-            case "name":
+            case "member":
               return (
-                <span className="font-medium text-[var(--lt-ink)]">
-                  {m.lastName}, {m.firstName}
-                </span>
+                <div className="flex items-center gap-3">
+                  <MemberAvatar
+                    photoKey={m.photoKey}
+                    firstName={m.firstName}
+                    lastName={m.lastName}
+                    size="md"
+                  />
+                  <span className="font-medium text-[var(--lt-ink)]">
+                    {m.lastName}, {m.firstName}
+                  </span>
+                </div>
               );
             case "number":
               return (

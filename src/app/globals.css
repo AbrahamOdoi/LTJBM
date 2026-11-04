@@ -137,3 +137,92 @@ body {
 .lt-link:hover {
   text-decoration: underline;
 }
+
+/* —— Member avatars —— */
+.lt-avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 9999px;
+  border: 1px solid var(--lt-line);
+  background: #eef2f0;
+}
+
+.lt-avatar-empty {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--lt-accent);
+  background: var(--lt-accent-soft);
+  border-color: color-mix(in srgb, var(--lt-accent) 22%, var(--lt-line));
+}
+
+/* —— Subtle motion (2–3 intentional cues; flat UI, not noise) —— */
+@keyframes lt-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lt-card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lt-enter {
+  animation: lt-enter 280ms ease-out both;
+}
+
+.lt-card-appear {
+  animation: lt-card-appear 360ms ease-out both;
+}
+
+.lt-card-appear:nth-child(1) {
+  animation-delay: 0ms;
+}
+.lt-card-appear:nth-child(2) {
+  animation-delay: 40ms;
+}
+.lt-card-appear:nth-child(3) {
+  animation-delay: 80ms;
+}
+.lt-card-appear:nth-child(4) {
+  animation-delay: 120ms;
+}
+.lt-card-appear:nth-child(5) {
+  animation-delay: 160ms;
+}
+.lt-card-appear:nth-child(6) {
+  animation-delay: 200ms;
+}
+
+.lt-row-hover {
+  transition: background-color 140ms ease;
+}
+
+.lt-row-hover:hover {
+  background-color: #f3faf8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lt-enter,
+  .lt-card-appear {
+    animation: none;
+  }
+
+  .lt-row-hover {
+    transition: none;
+  }
+}

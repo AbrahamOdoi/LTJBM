@@ -142,14 +142,32 @@ export function DashboardLive({
         </p>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <MoneyTile label="Expected" value={data.totals.expected} />
-        <MoneyTile label="Paid" value={data.totals.paid} emphasize="ok" />
-        <MoneyTile
-          label="Outstanding"
-          value={data.totals.outstanding}
-          emphasize={data.totals.outstanding > 0 ? "warn" : "ok"}
+      <div className="lt-panel overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/scenes/board.jpg"
+          alt="Leadership team meeting around a table"
+          className="h-32 w-full object-cover sm:h-36"
         />
+        <p className="border-t border-[var(--lt-line)] px-4 py-2 text-xs text-[var(--lt-muted)]">
+          Board reports stay aggregated — no named givers on this surface
+        </p>
+      </div>
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        <div className="lt-card-appear">
+          <MoneyTile label="Expected" value={data.totals.expected} />
+        </div>
+        <div className="lt-card-appear">
+          <MoneyTile label="Paid" value={data.totals.paid} emphasize="ok" />
+        </div>
+        <div className="lt-card-appear">
+          <MoneyTile
+            label="Outstanding"
+            value={data.totals.outstanding}
+            emphasize={data.totals.outstanding > 0 ? "warn" : "ok"}
+          />
+        </div>
       </section>
 
       <section className="lt-table-wrap">

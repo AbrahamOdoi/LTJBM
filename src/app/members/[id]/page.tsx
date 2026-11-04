@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { MemberAvatar } from "@/components/member-avatar";
 import { MembersAppShell } from "@/components/members/app-shell";
 import { MemberForm } from "@/components/members/member-form";
 import {
@@ -54,19 +55,31 @@ export default async function MemberDetailPage({ params }: { params: Params }) {
       role={session.user.role}
       userName={session.user.name}
     >
-      <div className="flex flex-wrap gap-2 print:hidden">
-        <Link
-          href={`/members/${member.id}/print`}
-          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-        >
-          Print individual
-        </Link>
-        <Link
-          href="/members"
-          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50"
-        >
-          Back to list
-        </Link>
+      <div className="lt-panel flex flex-wrap items-center gap-4 p-4 print:hidden">
+        <MemberAvatar
+          photoKey={member.photoKey}
+          firstName={member.firstName}
+          lastName={member.lastName}
+          size="xl"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-lg font-semibold tracking-tight text-[var(--lt-ink)]">
+            {member.firstName} {member.lastName}
+          </p>
+          <p className="mt-0.5 text-sm text-[var(--lt-muted)]">
+            {member.photoKey
+              ? "Photo on file"
+              : "No photo yet — initials placeholder shown until a photo is uploaded"}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href={`/members/${member.id}/print`} className="lt-btn-secondary">
+              Print individual
+            </Link>
+            <Link href="/members" className="lt-btn-secondary">
+              Back to list
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">

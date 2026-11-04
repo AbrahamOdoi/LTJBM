@@ -75,7 +75,7 @@ export function DataTable<T>({
           {rows.map((row) => (
             <tr
               key={rowKey(row)}
-              className="border-b border-[var(--lt-line)]/70 last:border-0"
+              className="lt-row-hover border-b border-[var(--lt-line)]/70 last:border-0"
             >
               {columns.map((col) => (
                 <td
