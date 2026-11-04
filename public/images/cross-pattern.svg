@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56" role="img" aria-hidden="true">
+  <!-- Subtle Latin cross tile for paper canvas watermark (low-opacity teal) -->
+  <path
+    fill="#0f766e"
+    fill-opacity="0.055"
+    d="M26 10h4v36h-4zM16 26h24v4H16z"
+  />
+</svg>

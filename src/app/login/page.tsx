@@ -29,7 +29,7 @@ export default async function LoginPage() {
           <SceneBanner
             scene="login"
             density="hero"
-            caption="Sanctuary photography · see README image attribution"
+            caption="Church sanctuary · see public/images/ATTRIBUTION.md"
           />
         </div>
 

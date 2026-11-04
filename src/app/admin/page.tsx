@@ -23,7 +23,7 @@ export default async function AdminHomePage() {
       <SceneBanner
         scene="workspace"
         density="strip"
-        caption="Data Centre — domains, users, export, and backup"
+        caption="Church house — Data Centre domains, users, export, and backup"
       />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

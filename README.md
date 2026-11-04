@@ -182,7 +182,8 @@ public/uploads/members/       Local photo storage (demo)
 Liveliness stays inside the flat Planning Center–class system (solid paper, teal accent — **no page gradients**):
 
 - **Member photos** — circular avatars on the register and detail; initials placeholders when no photo is on file. Seed attaches tracked `public/images/avatars/demo-*.svg` placeholders (non-PII) to the first 24 members A–Z; real uploads still go to `public/uploads/members/`.
-- **Scene photography** — local Unsplash copies under `public/images/scenes/` for login, role home cards, Contributions / Board / Data Centre banners, and empty states. Full credit table: [`public/images/ATTRIBUTION.md`](public/images/ATTRIBUTION.md).
+- **Scene photography** — church / Christian scenes under `public/images/scenes/` (sanctuary, congregation, steeple cross, altar, stained glass, pews) for login, role home cards, Contributions / Board / Data Centre banners, and empty states. Credit table: [`public/images/ATTRIBUTION.md`](public/images/ATTRIBUTION.md).
+- **Cross watermark** — subtle repeating Latin cross (`public/images/cross-pattern.svg`) on paper canvas backgrounds system-wide; low-opacity teal, not loud.
 - **Subtle motion** — page enter fade (`.lt-enter`), list row hover (`.lt-row-hover`), staggered dashboard card appear (`.lt-card-appear`); all respect `prefers-reduced-motion`.
 
 ## Documentation
@@ -192,7 +193,7 @@ Liveliness stays inside the flat Planning Center–class system (solid paper, te
 | [`docs/user-guides/`](docs/user-guides/) | Short guides: [Admin](docs/user-guides/admin.md), [Finance](docs/user-guides/finance.md), [Branch](docs/user-guides/branch.md), [Data Centre](docs/user-guides/data-centre.md) |
 | [`docs/demo-script.md`](docs/demo-script.md) | Section 8 ordered Demo Day walkthrough |
 | [`docs/backup-restore.md`](docs/backup-restore.md) | Export + `pg_dump` / `pg_restore` narrative |
-| [`public/images/ATTRIBUTION.md`](public/images/ATTRIBUTION.md) | Unsplash scene photo attribution |
+| [`public/images/ATTRIBUTION.md`](public/images/ATTRIBUTION.md) | Church scene photo attribution (Unsplash + Wikimedia) |
 
 ## Workstream boundaries
 
