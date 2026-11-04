@@ -107,14 +107,33 @@ export function isAdminPath(pathname: string): boolean {
 }
 
 /**
- * Board / Council dashboards and reporting APIs.
- * FinancialSecretary may view (same aggregates as finance overview).
- * RecordsClerk / BranchLeader stay out — no finance aggregates.
+ * Reports & Dashboards surface (UI + API).
+ * Clerk / Branch Leader: membership dashboards + membership standard/custom reports only.
+ * Board / Council / FS / Admin: finance aggregates (and HQ detail where gated below).
  */
 export const REPORTING_ACCESS_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
   Role.FinancialSecretary,
   Role.PastoralBoard,
   Role.LeadershipCouncil,
+  Role.Admin,
+] as const;
+
+/**
+ * Expected / Paid / Outstanding and other finance aggregates (never individual
+ * givers for Board/Council — those stay aggregate-only in report runners).
+ */
+export const FINANCE_AGGREGATE_REPORT_ROLES: readonly Role[] = [
+  Role.FinancialSecretary,
+  Role.PastoralBoard,
+  Role.LeadershipCouncil,
+  Role.Admin,
+] as const;
+
+/** Individual dues arrears, batch line detail, contribution row datasets. */
+export const FINANCE_DETAIL_REPORT_ROLES: readonly Role[] = [
+  Role.FinancialSecretary,
   Role.Admin,
 ] as const;
 
@@ -132,6 +151,20 @@ export function canAccessReporting(
   return (REPORTING_ACCESS_ROLES as readonly string[]).includes(role);
 }
 
+export function canAccessFinanceAggregateReports(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (FINANCE_AGGREGATE_REPORT_ROLES as readonly string[]).includes(role);
+}
+
+export function canAccessFinanceDetailReports(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (FINANCE_DETAIL_REPORT_ROLES as readonly string[]).includes(role);
+}
+
 export function canEditReportTemplates(
   role: Role | string | undefined | null,
 ): boolean {
@@ -145,12 +178,36 @@ export function isReportingPath(pathname: string): boolean {
   );
 }
 
-/** Pastoral Board: kind rollups; Council: also branch / period breakdowns. */
-export function reportingViewMode(
+export type DashboardProfile =
+  | "membership"
+  | "finance"
+  | "board"
+  | "council"
+  | "admin";
+
+/**
+ * Role landing dashboard profile for `/reports`.
+ * Clerk/Branch → membership KPIs; FS → HQ finance; Board/Council → aggregates;
+ * Admin → combined Data Centre overview.
+ */
+export function dashboardProfileForRole(
   role: Role | string | undefined | null,
-): "board" | "council" | "admin" | null {
+): DashboardProfile | null {
+  if (role === Role.RecordsClerk || role === Role.BranchLeader) {
+    return "membership";
+  }
+  if (role === Role.FinancialSecretary) return "finance";
   if (role === Role.PastoralBoard) return "board";
   if (role === Role.LeadershipCouncil) return "council";
-  if (role === Role.Admin || role === Role.FinancialSecretary) return "admin";
+  if (role === Role.Admin) return "admin";
   return null;
+}
+
+/** @deprecated Prefer dashboardProfileForRole — kept for Board template sections. */
+export function reportingViewMode(
+  role: Role | string | undefined | null,
+): "board" | "council" | "admin" | "membership" | null {
+  const profile = dashboardProfileForRole(role);
+  if (profile === "finance") return "admin";
+  return profile;
 }

@@ -8,9 +8,11 @@ export type BarDatum = {
 export function SimpleBarChart({
   title,
   data,
+  format = "money",
 }: {
   title: string;
   data: BarDatum[];
+  format?: "money" | "count";
 }) {
   const max = Math.max(...data.map((d) => d.value), 1);
 
@@ -24,7 +26,9 @@ export function SimpleBarChart({
             <li key={row.label} className="space-y-1">
               <div className="flex justify-between gap-2 text-xs text-[var(--lt-muted)]">
                 <span>{row.label}</span>
-                <span className="tabular-nums">{formatGhs(row.value)}</span>
+                <span className="tabular-nums">
+                  {format === "money" ? formatGhs(row.value) : row.value}
+                </span>
               </div>
               <div className="h-2 overflow-hidden rounded bg-[#eef0f3]">
                 <div

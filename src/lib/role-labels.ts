@@ -2,11 +2,13 @@ import {
   Role,
   canAccessAdmin,
   canAccessFinance,
+  canAccessFinanceAggregateReports,
   canAccessMembers,
   canAccessReporting,
   canWriteFinance,
   canWriteMembers,
   canEditReportTemplates,
+  dashboardProfileForRole,
 } from "@/lib/roles";
 
 /** Human-facing role names for demo and day-to-day UI (not Prisma enum strings). */
@@ -79,13 +81,18 @@ export function roleNavItems(
   }
 
   if (canAccessReporting(role)) {
+    const profile = dashboardProfileForRole(role);
     items.push({
       href: "/reports",
-      label: "Board reports",
+      label: "Reports",
       surface: "reports",
       description: canEditReportTemplates(role)
-        ? "Board dashboards, templates, and schedules"
-        : "Expected / Paid / Outstanding",
+        ? "Dashboards, standard reports, templates, and schedules"
+        : profile === "membership"
+          ? "Membership dashboard and printable reports"
+          : canAccessFinanceAggregateReports(role)
+            ? "Dashboards, Expected / Paid / Outstanding, and reports"
+            : "Reports for your ministry role",
     });
   }
 
@@ -108,14 +115,11 @@ export function defaultPathForRole(
   switch (role) {
     case Role.RecordsClerk:
     case Role.BranchLeader:
-      return "/members";
     case Role.FinancialSecretary:
-      return "/finance";
     case Role.PastoralBoard:
     case Role.LeadershipCouncil:
-      return "/reports";
     case Role.Admin:
-      return "/admin";
+      return "/reports";
     default:
       return "/";
   }
@@ -137,10 +141,14 @@ export function accessModeLabel(
       : "Contribution totals — read only";
   }
   if (surface === "reports") {
-    if (!canAccessReporting(role)) return "No Board reports access";
-    return canEditReportTemplates(role)
-      ? "May edit templates & schedules"
-      : "Board dashboards — read only";
+    if (!canAccessReporting(role)) return "No Reports access";
+    const profile = dashboardProfileForRole(role);
+    if (canEditReportTemplates(role)) return "May edit templates & schedules";
+    if (profile === "membership") return "Membership reports — your branch scope";
+    if (profile === "board" || profile === "council") {
+      return "Board dashboards — aggregates only";
+    }
+    return "Reports — read only";
   }
   return canAccessAdmin(role) ? "Full Data Centre access" : "No Data Centre access";
 }

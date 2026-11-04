@@ -1,40 +1,30 @@
 import { auth } from "@/auth";
-import { DashboardLive } from "@/components/reporting/dashboard-live";
-import { getDashboardSnapshot } from "@/lib/reporting/aggregates";
-import {
-  ensureDefaultBoardTemplate,
-} from "@/lib/reporting/service";
-import { reportingViewMode } from "@/lib/roles";
+import { RoleDashboardLive } from "@/components/reporting/role-dashboard-live";
+import { getRoleDashboard } from "@/lib/reporting/role-dashboard";
+import { dashboardProfileForRole } from "@/lib/roles";
+import { redirect } from "next/navigation";
 
 export default async function ReportsDashboardPage() {
   const session = await auth();
-  const role = session?.user?.role ?? "PastoralBoard";
-  const view = reportingViewMode(role);
+  if (!session?.user?.id || !session.user.role) {
+    redirect("/login");
+  }
 
-  const [snapshot, template] = await Promise.all([
-    getDashboardSnapshot(),
-    ensureDefaultBoardTemplate(),
-  ]);
+  const profile = dashboardProfileForRole(session.user.role);
+  if (!profile) {
+    redirect("/forbidden?reason=reporting");
+  }
 
-  const sections =
-    view === "board"
-      ? ["totals", "byKind", "charts"]
-      : ["totals", "byKind", "byBranch", "byPeriod", "charts"];
+  const snapshot = await getRoleDashboard({
+    id: session.user.id,
+    role: session.user.role,
+  });
 
   return (
-    <DashboardLive
-      layout={template.layout}
+    <RoleDashboardLive
       initial={{
-        view,
-        role,
-        generatedAt: snapshot.generatedAt,
-        source: snapshot.source,
-        financeContract: snapshot.financeContract,
-        sections,
-        totals: snapshot.totals,
-        byKind: snapshot.byKind,
-        byBranch: snapshot.byBranch,
-        byPeriod: snapshot.byPeriod,
+        role: session.user.role,
+        ...snapshot,
       }}
     />
   );

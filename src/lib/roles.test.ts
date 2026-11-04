@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import {
   Role,
   canAccessFinance,
+  canAccessFinanceAggregateReports,
+  canAccessFinanceDetailReports,
   canAccessReporting,
   canWriteFinance,
 } from "@/lib/roles";
@@ -23,9 +25,14 @@ describe("RBAC individual-giving gate", () => {
     assert.equal(canWriteFinance(Role.PastoralBoard), false);
   });
 
-  it("still allows Board/Council reporting aggregates", () => {
+  it("opens Reports for Clerk/Branch (membership) and Board aggregates", () => {
     assert.equal(canAccessReporting(Role.PastoralBoard), true);
     assert.equal(canAccessReporting(Role.LeadershipCouncil), true);
-    assert.equal(canAccessReporting(Role.RecordsClerk), false);
+    assert.equal(canAccessReporting(Role.RecordsClerk), true);
+    assert.equal(canAccessReporting(Role.BranchLeader), true);
+    assert.equal(canAccessFinanceAggregateReports(Role.RecordsClerk), false);
+    assert.equal(canAccessFinanceAggregateReports(Role.PastoralBoard), true);
+    assert.equal(canAccessFinanceDetailReports(Role.PastoralBoard), false);
+    assert.equal(canAccessFinanceDetailReports(Role.FinancialSecretary), true);
   });
 });
