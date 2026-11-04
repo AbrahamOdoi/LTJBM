@@ -77,9 +77,14 @@ export default async function AdminHomePage() {
             body: "Download member records as CSV or JSON for portability demos.",
           },
           {
+            href: "/admin/migrate",
+            title: "Register migration",
+            body: "Import members from a spreadsheet — column mapping, dry-run, commit.",
+          },
+          {
             href: "/admin/backup",
             title: "Backup & restore",
-            body: "Logical snapshot download plus Postgres restore walkthrough.",
+            body: "Automated schedule guidance, logical snapshot, and Postgres restore.",
           },
         ].map((item) => (
           <Link

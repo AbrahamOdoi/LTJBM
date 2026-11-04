@@ -24,8 +24,10 @@ export default async function AdminCompliancePage() {
           <p>
             Membership biodata (name, contact, household, sacraments, photos),
             attendance, pastoral notes (restricted), and Head Office contribution
-            records. Photos are stored as gated uploads under{" "}
-            <code className="text-xs">/uploads</code>, not on a public CDN.
+            records. Photos are served via the ACL-gated proxy{" "}
+            <code className="text-xs">/api/members/photos</code> (S3-compatible
+            object storage when configured, otherwise local disk) — not on a
+            public CDN.
           </p>
         </section>
 

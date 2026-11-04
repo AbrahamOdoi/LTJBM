@@ -52,6 +52,36 @@ model User {
   expensesCreated     Expense[]           @relation("ExpenseCreator")
   kidsCheckInsMarked  KidsCheckInRecord[] @relation("KidsCheckInMarker")
   kidsReleasesMarked  KidsCheckInRecord[] @relation("KidsReleaseMarker")
+  authSessions        AuthSession[]
+}
+
+/// Server-side session rows — JWT carries sessionToken; revoke ends access before cookie expiry.
+model AuthSession {
+  id           String    @id @default(cuid())
+  sessionToken String    @unique
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+/// Login attempt log for rate limiting (email + optional IP).
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ipAddress String?
+  success   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
 }
 
 /// Branch / unit scope for Branch Leaders (and similar limited roles).
@@ -219,6 +249,7 @@ model Member {
   @@index([dateOfBirth])
   @@index([status])
   @@index([joinedAt])
+  @@index([photoKey])
 }
 
 model Household {

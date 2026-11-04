@@ -17,6 +17,7 @@ const subNav = [
   { href: "/admin/audit", label: "Audit log" },
   { href: "/admin/compliance", label: "Data protection" },
   { href: "/admin/export", label: "Export" },
+  { href: "/admin/migrate", label: "Migrate" },
   { href: "/admin/backup", label: "Backup" },
 ];
 

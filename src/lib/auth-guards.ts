@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { isAuthSessionActive } from "@/lib/auth/sessions";
 import {
   canAccessAdmin,
   canAccessAttendance,
@@ -35,11 +36,20 @@ export class AuthGuardError extends Error {
 /**
  * Require a signed-in user and re-check DB for isActive + current role.
  * JWT alone is not enough after admin deactivates or demotes a user.
+ * Also verifies the DB-backed AuthSession when a sessionToken is present.
  */
 export async function requireSession() {
   const session = await auth();
   if (!session?.user?.id) {
     throw new AuthGuardError("Authentication required", 401);
+  }
+
+  const sessionToken = session.sessionToken;
+  if (sessionToken) {
+    const active = await isAuthSessionActive(sessionToken);
+    if (!active) {
+      throw new AuthGuardError("Session revoked or expired", 401);
+    }
   }
 
   const dbUser = await prisma.user.findUnique({

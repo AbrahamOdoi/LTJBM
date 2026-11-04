@@ -28,10 +28,11 @@
 2. Open a list (e.g. `ghana_region`) and add values; use `parentValue` for subdomains (Accra under a region).
 3. Member/finance forms consume these lists where wired.
 
-### Export & backup
+### Export, migrate & backup
 1. **Admin → Export** → download CSV or JSON (audited).
-2. **Admin → Backup** → download logical snapshot (no password hashes).
-3. For real recovery, follow [`docs/backup-restore.md`](../backup-restore.md) (`pg_dump` / `pg_restore`).
+2. **Admin → Migrate** → upload a register CSV, map columns, dry-run, then commit (biodata only — never finance).
+3. **Admin → Backup** → review automated schedule env, download logical snapshot (no password hashes).
+4. For real recovery / nightly cron, follow [`docs/backup-restore.md`](../backup-restore.md) (`npm run backup:scheduled`, `pg_dump` / `pg_restore`).
 
 ### Board reporting (Data Centre overlap)
 1. `/reports/templates` — add a field or chart; confirm `/reports` updates.
