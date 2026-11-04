@@ -306,6 +306,117 @@ async function seedMembers() {
   console.log(`Seeded ${created} members (total biodata demo ≥100).`);
 }
 
+async function seedDomainLists() {
+  const domains: Array<{
+    key: string;
+    label: string;
+    description: string;
+    values: Array<{
+      value: string;
+      label: string;
+      sortOrder: number;
+      parentValue?: string;
+    }>;
+  }> = [
+    {
+      key: "gender",
+      label: "Gender",
+      description: "Member biodata gender dropdown",
+      values: [
+        { value: "Male", label: "Male", sortOrder: 1 },
+        { value: "Female", label: "Female", sortOrder: 2 },
+        { value: "Other", label: "Other / prefer not to say", sortOrder: 3 },
+      ],
+    },
+    {
+      key: "member_status",
+      label: "Member status",
+      description: "Status labels for data-entry portal",
+      values: [
+        { value: "Active", label: "Active", sortOrder: 1 },
+        { value: "Inactive", label: "Inactive", sortOrder: 2 },
+        { value: "Transferred", label: "Transferred", sortOrder: 3 },
+        { value: "Suspended", label: "Suspended", sortOrder: 4 },
+        { value: "Deceased", label: "Deceased", sortOrder: 5 },
+      ],
+    },
+    {
+      key: "payment_method",
+      label: "Payment method",
+      description: "HQ finance entry methods (portal dropdown)",
+      values: [
+        { value: "Cash", label: "Cash", sortOrder: 1 },
+        { value: "MobileMoney", label: "Mobile Money", sortOrder: 2 },
+        { value: "BankTransfer", label: "Bank transfer", sortOrder: 3 },
+        { value: "Cheque", label: "Cheque", sortOrder: 4 },
+      ],
+    },
+    {
+      key: "ghana_region",
+      label: "Ghana regions",
+      description: "Location dropdown with example subdomain districts",
+      values: [
+        { value: "GreaterAccra", label: "Greater Accra", sortOrder: 1 },
+        { value: "Ashanti", label: "Ashanti", sortOrder: 2 },
+        { value: "Eastern", label: "Eastern", sortOrder: 3 },
+        {
+          value: "AccraMetro",
+          label: "Accra Metro",
+          sortOrder: 10,
+          parentValue: "GreaterAccra",
+        },
+        {
+          value: "Tema",
+          label: "Tema",
+          sortOrder: 11,
+          parentValue: "GreaterAccra",
+        },
+        {
+          value: "KumasiMetro",
+          label: "Kumasi Metro",
+          sortOrder: 20,
+          parentValue: "Ashanti",
+        },
+      ],
+    },
+  ];
+
+  for (const domain of domains) {
+    const list = await prisma.domainList.upsert({
+      where: { key: domain.key },
+      update: { label: domain.label, description: domain.description },
+      create: {
+        key: domain.key,
+        label: domain.label,
+        description: domain.description,
+      },
+    });
+
+    for (const v of domain.values) {
+      await prisma.domainListValue.upsert({
+        where: {
+          domainListId_value: { domainListId: list.id, value: v.value },
+        },
+        update: {
+          label: v.label,
+          sortOrder: v.sortOrder,
+          parentValue: v.parentValue ?? null,
+          isActive: true,
+        },
+        create: {
+          domainListId: list.id,
+          value: v.value,
+          label: v.label,
+          sortOrder: v.sortOrder,
+          parentValue: v.parentValue ?? null,
+        },
+      });
+    }
+  }
+
+  console.log(`Seeded ${domains.length} admin domain lists.`);
+}
+
 async function main() {
   const passwordHash = await hash(SEED_PASSWORD, 12);
 
@@ -410,6 +521,7 @@ async function main() {
 
   // Members-owned ≥100 biodata seed
   await seedMembers();
+  await seedDomainLists();
 
   // ── Finance demo slice (minimal FIN-* members; full biodata is Members-owned)
   const cell = await prisma.cell.upsert({
@@ -720,7 +832,7 @@ async function main() {
       entityType: "System",
       metadata: {
         message:
-          "Phase A platform + members + finance + reporting seed completed",
+          "Phase A platform + members + finance + reporting + admin seed completed",
         hqBranchId: hq.id,
         financeDemoMembers: financeMembers.map((m) => m.memberNumber),
         boardTemplateId: boardTemplate.id,

@@ -2,15 +2,16 @@
 
 Church Database Management System for **Living Testimonies for Jesus Bible Ministry (LTJBM)**.
 
-Phase A foundation:
+Phase A/B foundation:
 
 - Next.js App Router + TypeScript + Tailwind
-- PostgreSQL + Prisma schema (org, members, finance, auth, audit, reporting config)
+- PostgreSQL + Prisma schema (org, members, finance, auth, audit, reporting config, domains)
 - Auth.js (NextAuth v5) credential sessions with roles
-- Middleware / route guards: HQ-only finance; RecordsClerk denied finance
+- Middleware / route guards: HQ-only finance; Admin-only `/admin`; RecordsClerk denied finance
 - Audit log plumbing (`writeAuditLog`)
 - Docker Compose for local Postgres
 - **Members / Biodata:** register/update, household, cells & fellowships, photo upload, deterministic duplicates, status history, Ghana→international transfer, individual/group print, ≥100 seeded members
+- **Admin / Migration:** domains/dropdowns/subdomains, user/role admin, member CSV/JSON export, logical backup snapshot + `docs/backup-restore.md`
 
 Finance Phase A (HQ): obligations, payments, Saturday batch variance, dues
 arrears, and Expected/Paid/Outstanding APIs.
@@ -86,6 +87,8 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 7. Sign in as `board@ltjbm.local` → `/reports` shows kind rollups (auto-refresh after payments)
 8. Sign in as `council@ltjbm.local` → `/reports` also shows branch + period breakdowns
 9. Sign in as `admin@ltjbm.local` → `/reports/templates` add field/chart; `/reports/schedules` run email
+10. Sign in as `admin@ltjbm.local` → `/admin` domains/users/export/backup; clerk hitting `/admin` → forbidden
+11. Admin: download `/api/admin/export/members?format=csv` and logical backup snapshot
 
 ### Monthly Board email (demo)
 
@@ -131,13 +134,17 @@ src/lib/auth-guards.ts        Server/API guards
 src/lib/members/              Biodata access, duplicates, photos, actions
 src/lib/finance/              Balance math, batches, arrears, service
 src/lib/reporting/            Dashboard aggregates, templates, Board email
+src/lib/admin/                Domains, users, export, logical backup helpers
 src/app/members/              Clerk/Branch member UI + print
 src/app/finance/              HQ Financial Secretary / Admin UI
 src/app/reports/              Board/Council dashboards + template/schedule UI
+src/app/admin/                Admin / Data Centre console
 src/app/api/finance/          HQ finance APIs (RBAC gated)
 src/app/api/reports/          Reporting APIs (aggregates read + template edit)
+src/app/api/admin/            Member export + backup snapshot (Admin-only)
 src/components/finance/       Finance forms
 src/components/reporting/     Dashboard live refresh, template editor
+docs/backup-restore.md        Section 8 restore narrative (pg_dump/restore)
 docker-compose.yml            Local Postgres 16
 public/uploads/members/       Local photo storage (demo)
 ```
@@ -148,5 +155,5 @@ public/uploads/members/       Local photo storage (demo)
 - **Members / Biodata** — member CRUD, household, photos, duplicates, transfers, print, seed biodata
 - **Finance** — obligations, payments, Saturday batch, arrears (write path)
 - **Reporting** — Board rollups, schedules, template edit (reads aggregates only)
-- **Admin / Migration** — domains, user admin, export/backup
+- **Admin / Migration** — domains, user admin, export/backup narrative (import = Phase C)
 - **QA / Demo** — Section 8 script and seeded demo DB

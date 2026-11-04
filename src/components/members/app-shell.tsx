@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { SignOutButton } from "@/components/sign-out-button";
-import { canAccessFinance, canWriteMembers } from "@/lib/roles";
+import {
+  canAccessAdmin,
+  canAccessFinance,
+  canWriteMembers,
+} from "@/lib/roles";
 
 type Props = {
   children: React.ReactNode;
@@ -19,6 +23,7 @@ export function MembersAppShell({
 }: Props) {
   const writeOk = canWriteMembers(role);
   const financeOk = canAccessFinance(role);
+  const adminOk = canAccessAdmin(role);
 
   return (
     <div className="min-h-screen bg-[linear-gradient(165deg,#f4f7fb_0%,#e8eef6_45%,#dfe8f2_100%)] text-slate-900">
@@ -52,6 +57,11 @@ export function MembersAppShell({
               {financeOk ? (
                 <Link href="/finance" className="text-slate-500 hover:underline">
                   Finance
+                </Link>
+              ) : null}
+              {adminOk ? (
+                <Link href="/admin" className="text-slate-500 hover:underline">
+                  Admin
                 </Link>
               ) : null}
             </nav>

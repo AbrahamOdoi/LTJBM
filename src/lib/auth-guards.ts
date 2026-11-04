@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import {
+  canAccessAdmin,
   canAccessFinance,
   canAccessMembers,
   canAccessReporting,
@@ -94,6 +95,17 @@ export async function requireRoles(...roles: Role[]) {
   const session = await requireSession();
   if (!roles.includes(session.user.role)) {
     throw new AuthGuardError("Insufficient role", 403);
+  }
+  return session;
+}
+
+export async function requireAdmin() {
+  const session = await requireSession();
+  if (!canAccessAdmin(session.user.role)) {
+    throw new AuthGuardError(
+      "Admin / Data Centre access denied. Only Admin may open the admin console.",
+      403,
+    );
   }
   return session;
 }

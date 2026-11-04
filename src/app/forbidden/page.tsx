@@ -12,7 +12,9 @@ export default async function ForbiddenPage({
       ? "HQ finance is restricted. Records Clerks and other unauthorised roles cannot open finance routes or APIs."
       : reason === "reporting"
         ? "Board / Council reporting is role-gated. Records Clerks and Branch Leaders cannot open aggregated finance dashboards."
-        : "You do not have permission to view this page.";
+        : reason === "admin"
+          ? "Admin / Data Centre console is restricted to Admin users."
+          : "You do not have permission to view this page.";
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-6">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { SignOutButton } from "@/components/sign-out-button";
 import {
+  canAccessAdmin,
   canAccessFinance,
   canAccessMembers,
   canAccessReporting,
@@ -15,6 +16,7 @@ export default async function HomePage() {
   const reportingOk = canAccessReporting(role);
   const membersOk = canAccessMembers(role);
   const membersWrite = canWriteMembers(role);
+  const adminOk = canAccessAdmin(role);
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#e2e8f0_100%)] text-slate-900">
@@ -28,9 +30,9 @@ export default async function HomePage() {
               Church database
             </h1>
             <p className="mt-2 text-slate-600 text-sm leading-relaxed max-w-xl">
-              Phase A: platform auth, Members / biodata for Records Clerks and
-              Branch Leaders, HQ finance posting, and Board/Council reporting
-              dashboards that read live Expected / Paid / Outstanding aggregates.
+              Phase A/B: platform auth, Members / biodata, HQ finance posting,
+              Board/Council reporting, and Admin / Data Centre console (domains,
+              users, export, backup narrative).
             </p>
           </div>
           <SignOutButton />
@@ -121,6 +123,20 @@ export default async function HomePage() {
                 — Board / Council Expected · Paid · Outstanding
               </span>
             </li>
+            {adminOk ? (
+              <li>
+                <Link
+                  href="/admin"
+                  className="text-sky-800 hover:underline font-medium"
+                >
+                  /admin
+                </Link>
+                <span className="text-slate-500">
+                  {" "}
+                  — domains, users, export, backup
+                </span>
+              </li>
+            ) : null}
             <li>
               <span className="font-medium text-slate-800">/api/finance/health</span>
               <span className="text-slate-500">
