@@ -50,16 +50,16 @@ export default async function MembersListPage({
   return (
     <MembersAppShell
       title="Member register"
-      subtitle="Member records across branches, cells, and fellowship ministries. Contributions are Head Office only."
+      subtitle="Search and manage member records across branches, cells, and fellowship ministries."
       role={session.user.role}
       userName={session.user.name}
     >
-      <form className="lt-panel grid gap-3 p-4 sm:grid-cols-5 print:hidden">
+      <form className="lt-panel grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4 print:hidden">
         <input
           name="q"
           defaultValue={sp.q ?? ""}
           placeholder="Search name, phone, member number…"
-          className="lt-input sm:col-span-2"
+          className="lt-input lg:col-span-2"
         />
         <select
           name="branchId"
@@ -87,13 +87,10 @@ export default async function MembersListPage({
             ),
           )}
         </select>
-        <button type="submit" className="lt-btn-primary">
-          Filter
-        </button>
         <select
           name="cellId"
           defaultValue={sp.cellId ?? ""}
-          className="lt-input sm:col-span-2"
+          className="lt-input"
         >
           <option value="">All cells</option>
           {cells.map((c) => (
@@ -105,7 +102,7 @@ export default async function MembersListPage({
         <select
           name="fellowshipId"
           defaultValue={sp.fellowshipId ?? ""}
-          className="lt-input sm:col-span-2"
+          className="lt-input"
         >
           <option value="">All fellowship ministries</option>
           {fellowships.map((f) => (
@@ -114,6 +111,11 @@ export default async function MembersListPage({
             </option>
           ))}
         </select>
+        <div className="flex items-end lg:col-span-2">
+          <button type="submit" className="lt-btn-primary">
+            Apply filters
+          </button>
+        </div>
       </form>
 
       <div className="flex items-center justify-between gap-3 print:hidden">
@@ -157,7 +159,7 @@ export default async function MembersListPage({
       ) : (
         <div className="lt-table-wrap">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-[var(--lt-line)] bg-[#f3f7f5] text-[var(--lt-muted)]">
+            <thead className="border-b border-[var(--lt-line)] bg-[#f9fafb] text-[var(--lt-muted)]">
               <tr>
                 <th className="px-3 py-2.5 font-medium">Photo</th>
                 <th className="px-3 py-2.5 font-medium">Name</th>
@@ -189,7 +191,7 @@ export default async function MembersListPage({
                           className="h-10 w-10 rounded object-cover"
                         />
                       ) : (
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded bg-[#e8efeB] text-xs text-[var(--lt-muted)]">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded bg-[#f2f4f7] text-xs text-[var(--lt-muted)]">
                           —
                         </span>
                       )}

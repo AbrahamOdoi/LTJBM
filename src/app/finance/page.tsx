@@ -17,10 +17,10 @@ export default async function FinancePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--lt-ink)]">
+        <h2 className="text-2xl font-semibold tracking-tight text-[var(--lt-ink)]">
           Contributions overview
         </h2>
-        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--lt-muted)]">
+        <p className="mt-1 max-w-2xl text-sm text-[var(--lt-muted)]">
           Record pledges, tithes, dues, thanksgiving, and special project
           contributions at Head Office. Totals feed Board reports automatically
           {canWriteFinance(role)
@@ -41,7 +41,7 @@ export default async function FinancePage() {
 
       <section className="lt-table-wrap">
         <table className="min-w-full text-sm">
-          <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
+            <thead className="bg-[#f9fafb] text-left text-[var(--lt-muted)]">
             <tr>
               <th className="px-4 py-3 font-medium">Kind</th>
               <th className="px-4 py-3 font-medium">Obligations</th>
@@ -94,13 +94,11 @@ export default async function FinancePage() {
       </section>
 
       <p className="text-xs text-[var(--lt-muted)]">
-        After you post a payment, open{" "}
+        Board totals update when payments are posted. Open{" "}
         <Link href="/reports" className="lt-link">
           Board reports
         </Link>{" "}
-        to show Expected / Paid / Outstanding refreshing without a manual
-        rebuild. Individual giving stays here — Board never drills into named
-        givers.
+        for Expected / Paid / Outstanding. Named givers stay on this surface.
       </p>
     </div>
   );
@@ -118,7 +116,7 @@ function SummaryTile({
   return (
     <div className="lt-panel p-4">
       <p className="text-sm text-[var(--lt-muted)]">{label}</p>
-      <p className="mt-1 font-display text-2xl">
+      <p className="mt-1 text-2xl font-semibold tracking-tight">
         <MoneyCell value={value} emphasize={emphasize} />
       </p>
     </div>

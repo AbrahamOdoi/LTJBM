@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { Fraunces, Outfit } from "next/font/google";
+import { Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const outfit = Outfit({
-  variable: "--font-outfit",
+const sourceSans = Source_Sans_3({
+  variable: "--font-ui",
   subsets: ["latin"],
   display: "swap",
 });
@@ -17,7 +11,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Living Testimonies — Church Database",
   description:
-    "Living Testimonies for Jesus Bible Ministry — congregation membership, tithes & offerings, and board reporting",
+    "Living Testimonies for Jesus Bible Ministry — membership, contributions, and board reporting",
 };
 
 export default function RootLayout({
@@ -27,9 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${fraunces.variable} ${outfit.variable} font-sans antialiased`}
-      >
+      <body className={`${sourceSans.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

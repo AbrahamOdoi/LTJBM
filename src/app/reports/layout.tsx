@@ -25,12 +25,11 @@ export default async function ReportsLayout({
   return (
     <AppShell
       title="Board reports"
-      subtitle={`${accessModeLabel(role, "reports")}. Aggregated Expected · Received · Outstanding — no individual giving.`}
+      subtitle={`${accessModeLabel(role, "reports")}. Expected / Paid / Outstanding only — no individual givers.`}
       role={role}
       userName={session?.user?.name}
       active="reports"
       subNav={subNav}
-      banner="Pastoral Board & Leadership Council — ministry oversight"
       hidePageHeader
     >
       {children}

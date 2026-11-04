@@ -30,7 +30,7 @@ export default async function AdminHomePage() {
             <p className="text-[0.7rem] uppercase tracking-[0.14em] text-[var(--lt-muted)]">
               {card.label}
             </p>
-            <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-[var(--lt-ink)]">
+            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-[var(--lt-ink)]">
               {card.value}
             </p>
           </div>
@@ -65,7 +65,7 @@ export default async function AdminHomePage() {
             href={item.href}
             className="lt-panel block p-5 transition hover:border-[var(--lt-accent)]"
           >
-            <h2 className="font-display text-lg font-medium text-[var(--lt-ink)]">
+            <h2 className="text-base font-medium text-[var(--lt-ink)]">
               {item.title}
             </h2>
             <p className="mt-1 text-sm text-[var(--lt-muted)]">{item.body}</p>
