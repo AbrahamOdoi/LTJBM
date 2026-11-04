@@ -15,11 +15,15 @@ export type Role = (typeof Role)[keyof typeof Role];
 
 export const ALL_ROLES: Role[] = Object.values(Role);
 
-/** Roles that may open HQ finance routes and finance APIs. */
+/**
+ * Roles that may open HQ finance routes and finance APIs.
+ *
+ * Brief hard rule: individual giving is only for explicitly authorised roles.
+ * Pastoral Board / Leadership Council use `/reports` for aggregates — they must
+ * not open `/finance` (obligations, arrears, member payment detail).
+ */
 export const FINANCE_ACCESS_ROLES: readonly Role[] = [
   Role.FinancialSecretary,
-  Role.PastoralBoard,
-  Role.LeadershipCouncil,
   Role.Admin,
 ] as const;
 
@@ -28,6 +32,9 @@ export const FINANCE_WRITE_ROLES: readonly Role[] = [
   Role.FinancialSecretary,
   Role.Admin,
 ] as const;
+
+/** Alias — individual giving / member-level finance visibility. */
+export const INDIVIDUAL_GIVING_ROLES = FINANCE_ACCESS_ROLES;
 
 export function canAccessFinance(role: Role | string | undefined | null): boolean {
   if (!role) return false;

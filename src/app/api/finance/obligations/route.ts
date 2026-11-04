@@ -59,5 +59,5 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ obligation }, { status: 201 });
-  });
+  }, request);
 }

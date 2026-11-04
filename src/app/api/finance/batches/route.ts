@@ -30,5 +30,5 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ batch }, { status: 201 });
-  });
+  }, request);
 }

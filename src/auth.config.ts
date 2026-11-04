@@ -7,6 +7,10 @@ import {
   isFinancePath,
   isReportingPath,
 } from "@/lib/roles";
+import { getConfiguredCronSecret } from "@/lib/security";
+
+/** Office-day session lifetime (seconds). Shorter than Auth.js default (~30d). */
+export const SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
 
 /**
  * Edge-safe Auth.js config (no Node-only providers / Prisma).
@@ -34,13 +38,16 @@ export const authConfig = {
         return true;
       }
 
-      // Demo cron helper: allow Bearer REPORT_CRON_SECRET without a browser session.
-      if (
-        pathname === "/api/reports/schedules/run" &&
-        request.method === "POST" &&
-        request.headers.get("authorization")?.startsWith("Bearer ")
-      ) {
-        return true;
+      // Cron helper: allow only when Bearer matches a configured non-weak secret.
+      if (pathname === "/api/reports/schedules/run" && request.method === "POST") {
+        const cronSecret = getConfiguredCronSecret();
+        const header = request.headers.get("authorization");
+        if (
+          cronSecret &&
+          header === `Bearer ${cronSecret}`
+        ) {
+          return true;
+        }
       }
 
       if (!isLoggedIn) {
@@ -52,7 +59,7 @@ export const authConfig = {
           return Response.json(
             {
               error:
-                "Finance access denied. Records Clerks and unauthorised roles cannot open HQ finance.",
+                "Finance access denied. Individual giving is HQ Finance/Admin only; Board/Council use /reports for aggregates. Records Clerks cannot open HQ finance.",
             },
             { status: 403 },
           );
@@ -111,5 +118,7 @@ export const authConfig = {
   },
   session: {
     strategy: "jwt",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+    updateAge: 60 * 60,
   },
 } satisfies NextAuthConfig;
