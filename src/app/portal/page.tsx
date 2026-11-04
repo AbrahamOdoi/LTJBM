@@ -26,6 +26,7 @@ export default async function PortalHomePage() {
       subNav={[
         { href: "/portal", label: "My profile" },
         { href: "/portal/statement", label: "My statement" },
+        { href: "/give", label: "Give online" },
       ]}
     >
       <div className="grid gap-6 lg:grid-cols-2">

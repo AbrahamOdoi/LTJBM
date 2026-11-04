@@ -20,9 +20,13 @@ export default async function ReportSchedulesPage() {
         </h2>
         <p className="mt-1 text-sm text-slate-600 max-w-2xl">
           Cron expression <code className="rounded bg-slate-100 px-1">0 8 1 * *</code>{" "}
-          (08:00 on the 1st) targets the Board distribution list. Demo mode
-          writes HTML under <code className="rounded bg-slate-100 px-1">tmp/board-reports/</code>{" "}
-          (or <code className="rounded bg-slate-100 px-1">REPORT_EMAIL_DIR</code>).
+          (08:00 on the 1st) targets the Board distribution list. Set{" "}
+          <code className="rounded bg-slate-100 px-1">REPORT_EMAIL_MODE=smtp</code>{" "}
+          with <code className="rounded bg-slate-100 px-1">SMTP_HOST</code> /{" "}
+          <code className="rounded bg-slate-100 px-1">SMTP_FROM</code> for live
+          email; otherwise file mode writes under{" "}
+          <code className="rounded bg-slate-100 px-1">tmp/board-reports/</code>.
+          Content is aggregates only — never named givers.
         </p>
       </div>
 

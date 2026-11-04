@@ -179,6 +179,13 @@ export async function createFollowUpAction(formData: FormData) {
     );
   });
 
+  try {
+    const { enqueueWelcomeForMember } = await import("@/lib/comms/automations");
+    await enqueueWelcomeForMember(memberId, session.user.id);
+  } catch (err) {
+    console.warn("[members] welcome automation failed:", err);
+  }
+
   revalidatePath("/members/follow-ups");
   revalidatePath(`/members/${memberId}`);
 }

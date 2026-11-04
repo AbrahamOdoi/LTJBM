@@ -226,7 +226,10 @@ export type CreatePaymentInput = {
   reference?: string | null;
   notes?: string | null;
   batchId?: string | null;
-  actorId: string;
+  /** Null for system/webhook posts (online giving). */
+  actorId: string | null;
+  /** Online giving completes receipt itself — avoid double-send. */
+  skipReceiptAutomation?: boolean;
 };
 
 export async function createPayment(input: CreatePaymentInput) {
@@ -292,6 +295,19 @@ export async function createPayment(input: CreatePaymentInput) {
 
     return created;
   });
+
+  // Receipt template via outbox (logs clearly when SMTP/SMS credentials absent).
+  // Skip when caller will enqueue (online giving completes its own receipt).
+  if (!input.skipReceiptAutomation) {
+    try {
+      const { enqueueReceiptForPayment } = await import(
+        "@/lib/comms/automations"
+      );
+      await enqueueReceiptForPayment(payment.id, input.actorId);
+    } catch (err) {
+      console.warn("[finance] receipt automation failed:", err);
+    }
+  }
 
   return serializePayment(payment);
 }

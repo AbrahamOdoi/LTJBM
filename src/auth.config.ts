@@ -44,7 +44,7 @@ export const authConfig = {
         return true;
       }
 
-      const publicPaths = ["/login"];
+      const publicPaths = ["/login", "/give"];
       if (publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
         if (isLoggedIn && pathname.startsWith("/login")) {
           return Response.redirect(new URL("/", request.nextUrl));
@@ -56,8 +56,17 @@ export const authConfig = {
         return true;
       }
 
+      // Public online giving APIs (checkout + provider callbacks).
+      if (pathname.startsWith("/api/giving")) {
+        return true;
+      }
+
       // Cron helper: allow only when Bearer matches a configured non-weak secret.
-      if (pathname === "/api/reports/schedules/run" && request.method === "POST") {
+      if (
+        (pathname === "/api/reports/schedules/run" ||
+          pathname === "/api/comms/run") &&
+        request.method === "POST"
+      ) {
         const cronSecret = getConfiguredCronSecret();
         const header = request.headers.get("authorization");
         if (
@@ -74,12 +83,14 @@ export const authConfig = {
 
       const role = auth.user.role;
 
-      // Member portal role: only /portal (+ home/login handled above).
+      // Member portal role: only /portal (+ public give + home/login handled above).
       if (role === Role.Member) {
         if (
           isPortalPath(pathname) ||
           pathname === "/" ||
-          pathname === "/forbidden"
+          pathname === "/forbidden" ||
+          pathname.startsWith("/give") ||
+          pathname.startsWith("/api/giving")
         ) {
           return true;
         }

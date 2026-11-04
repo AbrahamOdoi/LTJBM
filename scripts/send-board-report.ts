@@ -5,8 +5,9 @@
  *   npm run report:monthly
  *
  * Env:
- *   REPORT_EMAIL_MODE=file|console   (default: file)
+ *   REPORT_EMAIL_MODE=file|console|smtp   (default: file)
  *   REPORT_EMAIL_DIR=./tmp/board-reports
+ *   SMTP_HOST / SMTP_FROM (when mode=smtp)
  *   DATABASE_URL=...
  */
 import { sendMonthlyBoardReport } from "../src/lib/reporting/email";
