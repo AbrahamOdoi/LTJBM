@@ -275,6 +275,7 @@ async function main() {
     const branchMembers = await req(branch, "GET", "/members");
     const branchFinance = await req(branch, "GET", "/finance");
     const boardFinance = await req(board, "GET", "/finance");
+    const boardReports = await req(board, "GET", "/reports");
     const financeHealth = await req(finance, "GET", "/api/finance/health");
 
     const clerkFinanceDenied =
@@ -293,6 +294,11 @@ async function main() {
       branchFinance.status === 307 ||
       branchFinance.status === 302 ||
       isRedirectTo(branchFinance.location, "/forbidden?reason=finance");
+    // Post #12: Board has aggregate /reports only — individual /finance is forbidden
+    const boardFinanceDenied =
+      boardFinance.status === 307 ||
+      boardFinance.status === 302 ||
+      isRedirectTo(boardFinance.location, "/forbidden?reason=finance");
 
     const healthOk =
       financeHealth.status === 200 &&
@@ -307,9 +313,10 @@ async function main() {
         clerkReportsDenied &&
         branchMembers.status === 200 &&
         branchFinanceDenied &&
-        boardFinance.status === 200 &&
+        boardFinanceDenied &&
+        boardReports.status === 200 &&
         healthOk,
-      `clerk finance→forbidden, api 403; admin/reports deny; branch members OK + finance deny; board /finance ${boardFinance.status}; finance health ok=${healthOk}`,
+      `clerk finance→forbidden, api 403; admin/reports deny; branch members OK + finance deny; board /finance deny (${boardFinance.status}), /reports ${boardReports.status}; finance health ok=${healthOk}`,
     );
   }
 
