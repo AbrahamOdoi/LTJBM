@@ -53,11 +53,15 @@ if [[ "$WITH_SQL" -eq 1 ]]; then
 fi
 
 if [[ "$WITH_UPLOADS" -eq 1 ]]; then
-  if [[ -d public/uploads/members ]]; then
-    echo "Archiving member photos → $UPLOADS_PATH"
+  # Phase F private storage first; fall back to legacy public/uploads.
+  if [[ -d storage/uploads/members ]] && compgen -G "storage/uploads/members/*" > /dev/null; then
+    echo "Archiving member photos (storage/) → $UPLOADS_PATH"
+    tar -czf "$UPLOADS_PATH" -C storage/uploads members
+  elif [[ -d public/uploads/members ]] && compgen -G "public/uploads/members/*" > /dev/null; then
+    echo "Archiving member photos (legacy public/) → $UPLOADS_PATH"
     tar -czf "$UPLOADS_PATH" -C public/uploads members
   else
-    echo "Skip uploads: public/uploads/members not found" >&2
+    echo "Skip uploads: no local member photos found (S3 mode or empty)" >&2
   fi
 fi
 

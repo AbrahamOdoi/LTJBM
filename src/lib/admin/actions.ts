@@ -5,6 +5,7 @@ import { hash } from "bcryptjs";
 import type { Role } from "@prisma/client";
 import { AuthGuardError, requireAdmin } from "@/lib/auth-guards";
 import { writeAuditLog } from "@/lib/audit";
+import { revokeAllUserSessions } from "@/lib/auth/sessions";
 import { prisma } from "@/lib/db";
 import {
   domainListSchema,
@@ -270,6 +271,9 @@ export async function updateUserAction(
       updated.role,
       parsed.data.branchIds ?? [],
     );
+    if (!updated.isActive || parsed.data.password) {
+      await revokeAllUserSessions(updated.id);
+    }
     await writeAuditLog({
       actorId: session.user.id,
       action: "admin.user.update",
@@ -280,6 +284,7 @@ export async function updateUserAction(
         role: updated.role,
         isActive: updated.isActive,
         passwordChanged: Boolean(parsed.data.password),
+        sessionsRevoked: !updated.isActive || Boolean(parsed.data.password),
       },
     });
     revalidatePath("/admin/users");

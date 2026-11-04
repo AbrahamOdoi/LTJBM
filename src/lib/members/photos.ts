@@ -1,18 +1,28 @@
-import { mkdir, writeFile, unlink } from "fs/promises";
-import path from "path";
 import { randomUUID } from "crypto";
+import {
+  deleteMemberPhotoBytes,
+  photoStorageMode,
+  putMemberPhotoBytes,
+} from "@/lib/storage/photos-backend";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "members");
 const MAX_BYTES = 2 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+/**
+ * Public URL for a member photo.
+ * Demo placeholders stay on static `/images/avatars`.
+ * Real photos go through the ACL-gated proxy (local disk or S3).
+ */
 export function photoPublicUrl(photoKey: string | null | undefined): string | null {
   if (!photoKey) return null;
-  // Seeded demo placeholders live under public/images/avatars (tracked, non-PII).
   if (photoKey.startsWith("demo-")) {
     return `/images/avatars/${photoKey}`;
   }
-  return `/uploads/members/${photoKey}`;
+  return `/api/members/photos/${encodeURIComponent(photoKey)}`;
+}
+
+export function getPhotoStorageMode(): "s3" | "local" {
+  return photoStorageMode();
 }
 
 export async function saveMemberPhoto(file: File): Promise<string> {
@@ -23,21 +33,20 @@ export async function saveMemberPhoto(file: File): Promise<string> {
     throw new Error("Photo must be 2MB or smaller.");
   }
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
-
   const ext =
     file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
   const key = `${randomUUID()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(UPLOAD_DIR, key), buffer);
+  await putMemberPhotoBytes(key, buffer, file.type);
   return key;
 }
 
 export async function deleteMemberPhoto(photoKey: string | null | undefined) {
   if (!photoKey) return;
+  if (photoKey.startsWith("demo-")) return;
   try {
-    await unlink(path.join(UPLOAD_DIR, photoKey));
+    await deleteMemberPhotoBytes(photoKey);
   } catch {
-    // Missing file is fine for demo local storage.
+    // Missing object is fine for demo / local storage.
   }
 }

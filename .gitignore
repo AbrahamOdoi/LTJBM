@@ -29,9 +29,11 @@
 /backups/*
 !/backups/.gitkeep
 
-# local member photo uploads (demo object-storage stand-in)
+# local member photo uploads (legacy public path + Phase F private storage)
 /public/uploads/members/*
 !/public/uploads/members/.gitkeep
+/storage/uploads/members/*
+!/storage/uploads/members/.gitkeep
 
 # debug
 npm-debug.log*
