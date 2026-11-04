@@ -2,14 +2,15 @@
 
 Church Database Management System for **Living Testimonies for Jesus Bible Ministry (LTJBM)**.
 
-Phase A platform foundation (Platform / Auth workstream):
+Phase A foundation:
 
 - Next.js App Router + TypeScript + Tailwind
-- PostgreSQL + Prisma schema skeleton (org, members, finance, auth, audit, reporting config)
+- PostgreSQL + Prisma schema (org, members, finance, auth, audit, reporting config)
 - Auth.js (NextAuth v5) credential sessions with roles
 - Middleware / route guards: HQ-only finance; RecordsClerk denied finance
 - Audit log plumbing (`writeAuditLog`)
 - Docker Compose for local Postgres
+- **Members / Biodata:** register/update, household, cells & fellowships, photo upload, deterministic duplicates, status history, Ghana→international transfer, individual/group print, ≥100 seeded members
 
 Finance Phase A (HQ): obligations, payments, Saturday batch variance, dues
 arrears, and Expected/Paid/Outstanding APIs.
@@ -78,11 +79,13 @@ Password defaults to `ChangeMe123!` (override with `SEED_PASSWORD`).
 
 1. Sign in as `clerk@ltjbm.local` → open `/finance` → redirected to `/forbidden?reason=finance`; `/reports` → `/forbidden?reason=reporting`
 2. Sign in as `finance@ltjbm.local` → `/finance` loads; `GET /api/finance/health` returns `{ ok: true }`
-3. Finance HQ screens: `/finance/obligations`, `/finance/batches`, `/finance/arrears`
-4. Reporting consume contract: `GET /api/finance/balances` (Expected / Paid / Outstanding by kind)
-5. Sign in as `board@ltjbm.local` → `/reports` shows kind rollups (auto-refresh after payments)
-6. Sign in as `council@ltjbm.local` → `/reports` also shows branch + period breakdowns
-7. Sign in as `admin@ltjbm.local` → `/reports/templates` add field/chart; `/reports/schedules` run email
+3. Sign in as `clerk@ltjbm.local` → `/members` full register/update/transfer/print
+4. Sign in as `branch@ltjbm.local` → `/members` scoped to East Legon only
+5. Finance HQ screens: `/finance/obligations`, `/finance/batches`, `/finance/arrears`
+6. Reporting consume contract: `GET /api/finance/balances` (Expected / Paid / Outstanding by kind)
+7. Sign in as `board@ltjbm.local` → `/reports` shows kind rollups (auto-refresh after payments)
+8. Sign in as `council@ltjbm.local` → `/reports` also shows branch + period breakdowns
+9. Sign in as `admin@ltjbm.local` → `/reports/templates` add field/chart; `/reports/schedules` run email
 
 ### Monthly Board email (demo)
 
@@ -118,15 +121,17 @@ Default schedule cron: `0 8 1 * *` (08:00 on the 1st) to `board@ltjbm.local` + `
 
 ```
 prisma/schema.prisma          Domain + auth/audit skeleton
-prisma/seed.ts                Demo users, branches, obligation types, Board template
+prisma/seed.ts                Demo users, branches, ≥100 members, obligation types, Board template
 src/auth.ts                   Auth.js + Credentials provider
 src/auth.config.ts            Edge middleware + finance/reporting gates
 src/middleware.ts             NextAuth middleware entry
 src/lib/roles.ts              Role matrix helpers
 src/lib/audit.ts              Audit log writer
 src/lib/auth-guards.ts        Server/API guards
+src/lib/members/              Biodata access, duplicates, photos, actions
 src/lib/finance/              Balance math, batches, arrears, service
 src/lib/reporting/            Dashboard aggregates, templates, Board email
+src/app/members/              Clerk/Branch member UI + print
 src/app/finance/              HQ Financial Secretary / Admin UI
 src/app/reports/              Board/Council dashboards + template/schedule UI
 src/app/api/finance/          HQ finance APIs (RBAC gated)
@@ -134,12 +139,13 @@ src/app/api/reports/          Reporting APIs (aggregates read + template edit)
 src/components/finance/       Finance forms
 src/components/reporting/     Dashboard live refresh, template editor
 docker-compose.yml            Local Postgres 16
+public/uploads/members/       Local photo storage (demo)
 ```
 
 ## Workstream boundaries
 
 - **Platform / Auth** — this bootstrap, RBAC, audit plumbing
-- **Members / Biodata** — member CRUD, household, photos, duplicates, transfers
+- **Members / Biodata** — member CRUD, household, photos, duplicates, transfers, print, seed biodata
 - **Finance** — obligations, payments, Saturday batch, arrears (write path)
 - **Reporting** — Board rollups, schedules, template edit (reads aggregates only)
 - **Admin / Migration** — domains, user admin, export/backup

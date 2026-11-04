@@ -43,6 +43,33 @@ export function isRecordsClerk(role: Role | string | undefined | null): boolean 
   return role === Role.RecordsClerk;
 }
 
+/** Roles that may open biodata / member register surfaces. */
+export const MEMBERS_ACCESS_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+  Role.FinancialSecretary,
+  Role.PastoralBoard,
+  Role.LeadershipCouncil,
+] as const;
+
+/** Roles that may create/update member biodata (not Board/Council read-only). */
+export const MEMBERS_WRITE_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+] as const;
+
+export function canAccessMembers(role: Role | string | undefined | null): boolean {
+  if (!role) return false;
+  return (MEMBERS_ACCESS_ROLES as readonly string[]).includes(role);
+}
+
+export function canWriteMembers(role: Role | string | undefined | null): boolean {
+  if (!role) return false;
+  return (MEMBERS_WRITE_ROLES as readonly string[]).includes(role);
+}
+
 /** Path prefixes that are HQ finance surfaces (UI + API). */
 export const FINANCE_ROUTE_PREFIXES = ["/finance", "/api/finance"] as const;
 

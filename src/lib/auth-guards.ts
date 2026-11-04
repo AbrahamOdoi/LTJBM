@@ -1,9 +1,11 @@
 import { auth } from "@/auth";
 import {
   canAccessFinance,
+  canAccessMembers,
   canAccessReporting,
   canEditReportTemplates,
   canWriteFinance,
+  canWriteMembers,
   type Role,
 } from "@/lib/roles";
 
@@ -63,6 +65,25 @@ export async function requireReportTemplateEdit() {
   if (!canEditReportTemplates(session.user.role)) {
     throw new AuthGuardError(
       "Report template edit denied. Admin / Data Centre only.",
+      403,
+    );
+  }
+  return session;
+}
+
+export async function requireMembersAccess() {
+  const session = await requireSession();
+  if (!canAccessMembers(session.user.role)) {
+    throw new AuthGuardError("Members access denied.", 403);
+  }
+  return session;
+}
+
+export async function requireMembersWrite() {
+  const session = await requireMembersAccess();
+  if (!canWriteMembers(session.user.role)) {
+    throw new AuthGuardError(
+      "Members write denied. Board/Council roles are read-only for biodata.",
       403,
     );
   }
