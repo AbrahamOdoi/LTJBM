@@ -384,6 +384,49 @@ export function isMediaPath(pathname: string): boolean {
   );
 }
 
+/**
+ * Volunteer scheduling (ushers, worship, hospitality, …) — church ops, not finance.
+ * Same write circle as attendance / events; Board may view schedules.
+ */
+export const VOLUNTEERS_ACCESS_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+  Role.PastoralBoard,
+  Role.LeadershipCouncil,
+] as const;
+
+export const VOLUNTEERS_WRITE_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+] as const;
+
+export const VOLUNTEERS_ROUTE_PREFIXES = [
+  "/volunteers",
+  "/api/volunteers",
+] as const;
+
+export function canAccessVolunteers(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (VOLUNTEERS_ACCESS_ROLES as readonly string[]).includes(role);
+}
+
+export function canWriteVolunteers(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (VOLUNTEERS_WRITE_ROLES as readonly string[]).includes(role);
+}
+
+export function isVolunteersPath(pathname: string): boolean {
+  return VOLUNTEERS_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 export type DashboardProfile =
   | "membership"
   | "finance"

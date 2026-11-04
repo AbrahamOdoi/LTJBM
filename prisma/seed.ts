@@ -820,6 +820,243 @@ async function seedGroupsHub(opts: {
   );
 }
 
+async function seedKidsAndVolunteers(opts: {
+  hqId: string;
+  eastId: string;
+  actorId: string;
+  guardianMemberId: string;
+  sampleVolunteerIds: string[];
+}) {
+  const nursery =
+    (await prisma.kidsRoom.findFirst({
+      where: { name: "Nursery", branchId: opts.eastId },
+    })) ??
+    (await prisma.kidsRoom.create({
+      data: {
+        name: "Nursery",
+        code: "NURS",
+        branchId: opts.eastId,
+        ageMinYears: 0,
+        ageMaxYears: 3,
+        capacity: 20,
+      },
+    }));
+
+  await prisma.kidsRoom.upsert({
+    where: {
+      branchId_name: { branchId: opts.eastId, name: "Kids church" },
+    },
+    update: {},
+    create: {
+      name: "Kids church",
+      code: "KIDS",
+      branchId: opts.eastId,
+      ageMinYears: 4,
+      ageMaxYears: 12,
+      capacity: 40,
+    },
+  });
+
+  const guardian = await prisma.member.findUniqueOrThrow({
+    where: { id: opts.guardianMemberId },
+  });
+
+  let child = await prisma.member.findFirst({
+    where: { memberNumber: "KID-001" },
+  });
+  if (!child) {
+    child = await prisma.member.create({
+      data: {
+        memberNumber: "KID-001",
+        firstName: "Ama",
+        lastName: guardian.lastName,
+        dateOfBirth: new Date("2018-06-15T00:00:00.000Z"),
+        gender: "Female",
+        status: "Active",
+        branchId: opts.eastId,
+        joinedAt: new Date("2020-01-01T00:00:00.000Z"),
+      },
+    });
+  }
+
+  await prisma.childGuardian.upsert({
+    where: {
+      childMemberId_guardianMemberId: {
+        childMemberId: child.id,
+        guardianMemberId: guardian.id,
+      },
+    },
+    update: { canPickup: true, relationship: "Parent" },
+    create: {
+      childMemberId: child.id,
+      guardianMemberId: guardian.id,
+      relationship: "Parent",
+      canPickup: true,
+    },
+  });
+
+  const hh =
+    (await prisma.household.findFirst({
+      where: { name: `${guardian.lastName} household (kids demo)` },
+    })) ??
+    (await prisma.household.create({
+      data: { name: `${guardian.lastName} household (kids demo)` },
+    }));
+
+  await prisma.householdMember.upsert({
+    where: {
+      householdId_memberId: { householdId: hh.id, memberId: guardian.id },
+    },
+    update: { relation: "Head" },
+    create: {
+      householdId: hh.id,
+      memberId: guardian.id,
+      relation: "Head",
+    },
+  });
+  await prisma.householdMember.upsert({
+    where: {
+      householdId_memberId: { householdId: hh.id, memberId: child.id },
+    },
+    update: { relation: "Child" },
+    create: {
+      householdId: hh.id,
+      memberId: child.id,
+      relation: "Child",
+    },
+  });
+
+  const kidsSessionCount = await prisma.kidsCheckInSession.count();
+  if (kidsSessionCount === 0) {
+    const adultAtt = await prisma.attendanceSession.findFirst({
+      where: { branchId: opts.eastId },
+      orderBy: { heldAt: "desc" },
+    });
+    await prisma.kidsCheckInSession.create({
+      data: {
+        label: "Sunday children’s church (demo)",
+        heldAt: new Date(),
+        branchId: opts.eastId,
+        roomId: nursery.id,
+        attendanceSessionId: adultAtt?.id ?? null,
+        checkInToken: "demo-kids-checkin-token",
+        kioskEnabled: true,
+      },
+    });
+  }
+
+  const teamDefs: Array<{
+    name: string;
+    kind: "Usher" | "Worship" | "Hospitality" | "Kids";
+    roles: Array<{ name: string; slots: number }>;
+  }> = [
+    {
+      name: "Sunday ushers",
+      kind: "Usher",
+      roles: [
+        { name: "Door greeter", slots: 4 },
+        { name: "Offering team", slots: 2 },
+      ],
+    },
+    {
+      name: "Worship team",
+      kind: "Worship",
+      roles: [
+        { name: "Vocals", slots: 3 },
+        { name: "Keys", slots: 1 },
+      ],
+    },
+    {
+      name: "Hospitality hosts",
+      kind: "Hospitality",
+      roles: [{ name: "Welcome desk", slots: 2 }],
+    },
+    {
+      name: "Children’s helpers",
+      kind: "Kids",
+      roles: [{ name: "Classroom helper", slots: 3 }],
+    },
+  ];
+
+  const roleIds: string[] = [];
+  for (const def of teamDefs) {
+    const team = await prisma.volunteerTeam.upsert({
+      where: {
+        branchId_name: { branchId: opts.hqId, name: def.name },
+      },
+      update: { kind: def.kind, isActive: true },
+      create: {
+        name: def.name,
+        kind: def.kind,
+        branchId: opts.hqId,
+        description: `Demo ${def.kind.toLowerCase()} team`,
+      },
+    });
+    for (const [i, role] of def.roles.entries()) {
+      const created = await prisma.volunteerRole.upsert({
+        where: { teamId_name: { teamId: team.id, name: role.name } },
+        update: { defaultSlots: role.slots, isActive: true },
+        create: {
+          teamId: team.id,
+          name: role.name,
+          defaultSlots: role.slots,
+          sortOrder: (i + 1) * 10,
+        },
+      });
+      roleIds.push(created.id);
+    }
+  }
+
+  const svcCount = await prisma.volunteerService.count();
+  if (svcCount === 0 && roleIds.length > 0) {
+    const starts = new Date();
+    starts.setUTCDate(starts.getUTCDate() + ((7 - starts.getUTCDay()) % 7 || 7));
+    starts.setUTCHours(9, 0, 0, 0);
+    const ends = new Date(starts.getTime() + 2.5 * 3600000);
+    const service = await prisma.volunteerService.create({
+      data: {
+        label: "Sunday worship (demo)",
+        startsAt: starts,
+        endsAt: ends,
+        branchId: opts.hqId,
+        location: "Main sanctuary",
+        notes: "Demo volunteer schedule — Phase F",
+      },
+    });
+    for (const roleId of roleIds.slice(0, 4)) {
+      const role = await prisma.volunteerRole.findUniqueOrThrow({
+        where: { id: roleId },
+      });
+      await prisma.volunteerNeed.create({
+        data: {
+          serviceId: service.id,
+          roleId,
+          slotsNeeded: role.defaultSlots,
+        },
+      });
+    }
+
+    const firstNeed = await prisma.volunteerNeed.findFirst({
+      where: { serviceId: service.id },
+      orderBy: { createdAt: "asc" },
+    });
+    const volunteerId = opts.sampleVolunteerIds[0];
+    if (firstNeed && volunteerId) {
+      await prisma.volunteerAssignment.create({
+        data: {
+          needId: firstNeed.id,
+          memberId: volunteerId,
+          status: "Confirmed",
+        },
+      });
+    }
+  }
+
+  console.log(
+    `Kids/volunteers: rooms=${await prisma.kidsRoom.count()}, kids sessions=${await prisma.kidsCheckInSession.count()}, teams=${await prisma.volunteerTeam.count()}.`,
+  );
+}
+
 async function main() {
   const passwordHash = await hash(SEED_PASSWORD, 12);
 
@@ -1470,13 +1707,22 @@ async function main() {
     mediaActorId: clerk.id,
   });
 
+  // Phase F — children’s check-in + volunteer scheduling
+  await seedKidsAndVolunteers({
+    hqId: hq.id,
+    eastId: eastLegon.id,
+    actorId: clerk.id,
+    guardianMemberId: portalMember.id,
+    sampleVolunteerIds: financeMembers.slice(0, 3).map((m) => m.id),
+  });
+
   await prisma.auditLog.create({
     data: {
       action: "system.seed",
       entityType: "System",
       metadata: {
         message:
-          "Platform + members + finance + reporting + admin + Phase D/E + Phase F sermon/GL seed completed",
+          "Platform + members + finance + reporting + admin + Phase D/E/F (sermon/GL + kids/volunteers) seed completed",
         hqBranchId: hq.id,
         financeDemoMembers: financeMembers.map((m) => m.memberNumber),
         boardTemplateId: boardTemplate.id,

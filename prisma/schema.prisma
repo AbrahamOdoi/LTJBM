@@ -50,6 +50,8 @@ model User {
   journalEntriesPosted  JournalEntry[]    @relation("JournalPoster")
   budgetsCreated      Budget[]            @relation("BudgetCreator")
   expensesCreated     Expense[]           @relation("ExpenseCreator")
+  kidsCheckInsMarked  KidsCheckInRecord[] @relation("KidsCheckInMarker")
+  kidsReleasesMarked  KidsCheckInRecord[] @relation("KidsReleaseMarker")
 }
 
 /// Branch / unit scope for Branch Leaders (and similar limited roles).
@@ -99,6 +101,10 @@ model Branch {
   churchEvents ChurchEvent[]
   ministryGroups MinistryGroup[]
   facilityRooms  FacilityRoom[]
+  kidsRooms      KidsRoom[]
+  kidsSessions   KidsCheckInSession[]
+  volunteerTeams VolunteerTeam[]
+  volunteerServices VolunteerService[]
 }
 
 model Cell {
@@ -201,6 +207,11 @@ model Member {
   groupRoster      GroupRosterEntry[]
   customFieldValues MemberCustomFieldValue[]
   onlineCheckouts  OnlineGivingCheckout[]
+  childGuardianOf  ChildGuardian[] @relation("ChildMember")
+  guardianOfChild  ChildGuardian[] @relation("GuardianMember")
+  kidsCheckIns     KidsCheckInRecord[]
+  kidsReleasedTo   KidsCheckInRecord[] @relation("KidsReleasedTo")
+  volunteerAssignments VolunteerAssignment[]
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -537,6 +548,7 @@ model AttendanceSession {
   branch        Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
   cell          Cell?          @relation(fields: [cellId], references: [id], onDelete: SetNull)
   records       AttendanceRecord[]
+  kidsSessions  KidsCheckInSession[]
 
   @@index([branchId, heldAt])
   @@index([cellId, heldAt])
@@ -1101,4 +1113,209 @@ model Expense {
 
   @@index([expenseDate])
   @@index([accountId])
+}
+
+// ─── Phase F — children’s check-in + pickup tags ─────────────────────────────
+
+enum KidsCheckInStatus {
+  CheckedIn
+  Released
+  Cancelled
+}
+
+/// Classroom / age group for children’s ministry (nursery, toddlers, …).
+model KidsRoom {
+  id          String   @id @default(cuid())
+  name        String
+  code        String?
+  branchId    String?
+  ageMinYears Int?
+  ageMaxYears Int?
+  capacity    Int?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  branch      Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  sessions    KidsCheckInSession[]
+  checkIns    KidsCheckInRecord[]
+
+  @@unique([branchId, name])
+  @@index([isActive])
+}
+
+/// Explicit guardian ↔ child link (also complements Household Child/Head/Spouse).
+model ChildGuardian {
+  id               String   @id @default(cuid())
+  childMemberId    String
+  guardianMemberId String
+  relationship     String?
+  canPickup        Boolean  @default(true)
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  child            Member   @relation("ChildMember", fields: [childMemberId], references: [id], onDelete: Cascade)
+  guardian         Member   @relation("GuardianMember", fields: [guardianMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([childMemberId, guardianMemberId])
+  @@index([guardianMemberId])
+}
+
+/// Service-day children’s check-in session (kiosk / QR / staff).
+model KidsCheckInSession {
+  id                  String         @id @default(cuid())
+  label               String
+  heldAt              DateTime
+  branchId            String
+  roomId              String?
+  /// Optional link to adult attendance session for the same service.
+  attendanceSessionId String?
+  checkInToken        String?        @unique
+  kioskEnabled        Boolean        @default(true)
+  notes               String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  branch              Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  room                KidsRoom?      @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  attendanceSession   AttendanceSession? @relation(fields: [attendanceSessionId], references: [id], onDelete: SetNull)
+  checkIns            KidsCheckInRecord[]
+
+  @@index([branchId, heldAt])
+  @@index([roomId, heldAt])
+}
+
+model KidsCheckInRecord {
+  id                   String            @id @default(cuid())
+  sessionId            String
+  childMemberId        String
+  roomId               String?
+  status               KidsCheckInStatus @default(CheckedIn)
+  source               AttendanceCheckInSource @default(Manual)
+  /// Short code printed on child + guardian pickup tags (unique per session).
+  pickupCode           String
+  checkedInAt          DateTime          @default(now())
+  checkedInById        String?
+  checkedInByGuardianId String?
+  releasedAt           DateTime?
+  releasedById         String?
+  releasedToGuardianId String?
+  notes                String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  session              KidsCheckInSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  child                Member            @relation(fields: [childMemberId], references: [id], onDelete: Cascade)
+  room                 KidsRoom?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  checkedInBy          User?             @relation("KidsCheckInMarker", fields: [checkedInById], references: [id], onDelete: SetNull)
+  releasedBy           User?             @relation("KidsReleaseMarker", fields: [releasedById], references: [id], onDelete: SetNull)
+  releasedToGuardian   Member?           @relation("KidsReleasedTo", fields: [releasedToGuardianId], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, childMemberId])
+  @@unique([sessionId, pickupCode])
+  @@index([status, sessionId])
+  @@index([childMemberId])
+  @@index([pickupCode])
+}
+
+// ─── Phase F — volunteer scheduling ──────────────────────────────────────────
+
+enum VolunteerTeamKind {
+  Usher
+  Worship
+  Hospitality
+  Kids
+  Media
+  Parking
+  Security
+  Other
+}
+
+enum VolunteerAssignmentStatus {
+  SignedUp
+  Confirmed
+  Declined
+  Cancelled
+}
+
+model VolunteerTeam {
+  id          String            @id @default(cuid())
+  name        String
+  kind        VolunteerTeamKind
+  description String?
+  branchId    String?
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  branch      Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  roles       VolunteerRole[]
+
+  @@unique([branchId, name])
+  @@index([kind, isActive])
+}
+
+model VolunteerRole {
+  id          String        @id @default(cuid())
+  teamId      String
+  name        String
+  description String?
+  defaultSlots Int          @default(1)
+  sortOrder   Int           @default(0)
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  team        VolunteerTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  needs       VolunteerNeed[]
+
+  @@unique([teamId, name])
+  @@index([teamId, sortOrder])
+}
+
+/// A dated service / gathering that needs volunteer coverage.
+model VolunteerService {
+  id        String   @id @default(cuid())
+  label     String
+  startsAt  DateTime
+  endsAt    DateTime?
+  branchId  String?
+  location  String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  needs     VolunteerNeed[]
+
+  @@index([startsAt])
+  @@index([branchId, startsAt])
+}
+
+/// Slots needed for a role on a specific service.
+model VolunteerNeed {
+  id          String              @id @default(cuid())
+  serviceId   String
+  roleId      String
+  slotsNeeded Int                 @default(1)
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  service     VolunteerService    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  role        VolunteerRole       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignments VolunteerAssignment[]
+
+  @@unique([serviceId, roleId])
+  @@index([roleId])
+}
+
+model VolunteerAssignment {
+  id        String                     @id @default(cuid())
+  needId    String
+  memberId  String
+  status    VolunteerAssignmentStatus  @default(SignedUp)
+  notes     String?
+  createdAt DateTime                   @default(now())
+  updatedAt DateTime                   @updatedAt
+  need      VolunteerNeed              @relation(fields: [needId], references: [id], onDelete: Cascade)
+  member    Member                     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([needId, memberId])
+  @@index([memberId, status])
+  @@index([needId, status])
 }

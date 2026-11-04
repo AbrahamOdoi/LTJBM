@@ -9,6 +9,7 @@ import {
   canAccessMedia,
   canAccessPastoral,
   canAccessReporting,
+  canAccessVolunteers,
   isAdminPath,
   isAttendancePath,
   isEventsPath,
@@ -18,6 +19,7 @@ import {
   isPastoralPath,
   isPortalPath,
   isReportingPath,
+  isVolunteersPath,
 } from "@/lib/roles";
 import { getConfiguredCronSecret } from "@/lib/security";
 
@@ -41,7 +43,9 @@ export const authConfig = {
       // Public QR / mobile check-in (token in path; no staff login on phone).
       if (
         pathname.startsWith("/check-in/") ||
-        pathname.startsWith("/api/check-in/")
+        pathname.startsWith("/api/check-in/") ||
+        pathname.startsWith("/kids-check-in/") ||
+        pathname.startsWith("/api/kids-check-in/")
       ) {
         return true;
       }
@@ -212,6 +216,18 @@ export const authConfig = {
         }
         return Response.redirect(
           new URL("/forbidden?reason=media", request.nextUrl),
+        );
+      }
+
+      if (isVolunteersPath(pathname) && !canAccessVolunteers(role)) {
+        if (pathname.startsWith("/api/")) {
+          return Response.json(
+            { error: "Volunteer scheduling access denied." },
+            { status: 403 },
+          );
+        }
+        return Response.redirect(
+          new URL("/forbidden?reason=volunteers", request.nextUrl),
         );
       }
 

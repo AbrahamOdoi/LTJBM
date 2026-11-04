@@ -10,10 +10,12 @@ import {
   canAccessMembers,
   canAccessPastoral,
   canAccessReporting,
+  canAccessVolunteers,
   canWriteFinance,
   canWriteGroups,
   canWriteMedia,
   canWriteMembers,
+  canWriteVolunteers,
   canEditReportTemplates,
   dashboardProfileForRole,
   isMemberPortalRole,
@@ -47,6 +49,7 @@ export type NavSurface =
   | "events"
   | "groups"
   | "media"
+  | "volunteers"
   | "portal";
 
 export type RoleNavItem = {
@@ -99,7 +102,18 @@ export function roleNavItems(
       href: "/attendance",
       label: "Attendance",
       surface: "attendance",
-      description: "Service and cell check-in (manual, kiosk, QR)",
+      description: "Service, cell, and children’s check-in (kiosk / QR)",
+    });
+  }
+
+  if (canAccessVolunteers(role)) {
+    items.push({
+      href: "/volunteers",
+      label: "Volunteers",
+      surface: "volunteers",
+      description: canWriteVolunteers(role)
+        ? "Teams, service schedules, and volunteer assignments"
+        : "Browse volunteer teams and service schedules",
     });
   }
 

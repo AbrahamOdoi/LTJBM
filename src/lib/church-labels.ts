@@ -27,3 +27,19 @@ export function ministryGroupKindLabel(kind: string | null | undefined): string 
   if (!kind) return "—";
   return MINISTRY_GROUP_KIND_LABELS[kind] ?? kind;
 }
+
+const VOLUNTEER_TEAM_KIND_LABELS: Record<string, string> = {
+  Usher: "Ushers",
+  Worship: "Worship",
+  Hospitality: "Hospitality",
+  Kids: "Children’s ministry",
+  Media: "Media",
+  Parking: "Parking",
+  Security: "Security",
+  Other: "Other team",
+};
+
+export function volunteerTeamKindLabel(kind: string | null | undefined): string {
+  if (!kind) return "—";
+  return VOLUNTEER_TEAM_KIND_LABELS[kind] ?? kind;
+}
