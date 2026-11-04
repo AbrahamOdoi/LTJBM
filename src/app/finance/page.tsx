@@ -16,12 +16,13 @@ export default async function FinancePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Overview</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Finance overview</h2>
         <p className="mt-1 text-slate-600">
-          HQ obligations and payments update Expected / Paid / Outstanding for
-          Reporting. Role{" "}
-          <span className="font-medium text-slate-900">{role}</span>
-          {canWriteFinance(role) ? " may post" : " is read-only"}.
+          Post pledges, special projects, and Saturday collections here. Totals
+          feed Board reports automatically
+          {canWriteFinance(role)
+            ? " — you can post and reconcile."
+            : " — your account is read-only on this surface."}
         </p>
       </div>
 
@@ -94,9 +95,8 @@ export default async function FinancePage() {
       </section>
 
       <p className="text-xs text-slate-500">
-        Reporting contract:{" "}
-        <code className="rounded bg-slate-100 px-1">GET /api/finance/balances</code>{" "}
-        — Board dashboards/templates are owned by Reporting, not this surface.
+        After you post a payment, open <Link href="/reports" className="text-sky-800 hover:underline">Reports</Link>{" "}
+        to show the Board dashboard refreshing without a manual rebuild.
       </p>
     </div>
   );

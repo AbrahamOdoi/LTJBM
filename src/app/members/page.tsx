@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/empty-state";
 import { MembersAppShell } from "@/components/members/app-shell";
 import { requireMembersAccess } from "@/lib/auth-guards";
 import { canWriteMembers } from "@/lib/roles";
@@ -146,75 +147,81 @@ export default async function MembersListPage({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white/90">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
-            <tr>
-              <th className="px-3 py-2 font-medium">Photo</th>
-              <th className="px-3 py-2 font-medium">Name</th>
-              <th className="px-3 py-2 font-medium">Number</th>
-              <th className="px-3 py-2 font-medium">Branch</th>
-              <th className="px-3 py-2 font-medium">Groups</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 font-medium print:hidden"> </th>
-            </tr>
-          </thead>
-          <tbody>
-            {listed.members.map((m) => {
-              const photo = photoPublicUrl(m.photoKey);
-              const groups = m.groups
-                .map((g) => g.cell?.name ?? g.fellowshipMinistry?.name)
-                .filter(Boolean)
-                .join(", ");
-              return (
-                <tr key={m.id} className="border-b border-slate-100">
-                  <td className="px-3 py-2">
-                    {photo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={photo}
-                        alt=""
-                        className="h-10 w-10 rounded object-cover"
-                      />
-                    ) : (
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-xs text-slate-400">
-                        —
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 font-medium">
-                    {m.lastName}, {m.firstName}
-                  </td>
-                  <td className="px-3 py-2 text-slate-600">{m.memberNumber}</td>
-                  <td className="px-3 py-2">
-                    {m.branch.name}
-                    {m.branch.isInternational ? (
-                      <span className="ml-1 text-xs text-slate-500">(intl)</span>
-                    ) : null}
-                  </td>
-                  <td className="px-3 py-2 text-slate-600">{groups || "—"}</td>
-                  <td className="px-3 py-2">{m.status}</td>
-                  <td className="px-3 py-2 print:hidden">
-                    <Link
-                      href={`/members/${m.id}`}
-                      className="text-sky-800 hover:underline"
-                    >
-                      Open
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-            {listed.members.length === 0 ? (
+      {listed.members.length === 0 ? (
+        <EmptyState
+          title="No members match these filters"
+          body={
+            writeOk
+              ? "Try clearing filters, or register a new member for this branch."
+              : "Try clearing filters, or ask a Records Clerk to register the member."
+          }
+          actionHref={writeOk ? "/members/new" : undefined}
+          actionLabel={writeOk ? "Register member" : undefined}
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white/90">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
-                  No members match these filters.
-                </td>
+                <th className="px-3 py-2 font-medium">Photo</th>
+                <th className="px-3 py-2 font-medium">Name</th>
+                <th className="px-3 py-2 font-medium">Number</th>
+                <th className="px-3 py-2 font-medium">Branch</th>
+                <th className="px-3 py-2 font-medium">Groups</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium print:hidden"> </th>
               </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {listed.members.map((m) => {
+                const photo = photoPublicUrl(m.photoKey);
+                const groups = m.groups
+                  .map((g) => g.cell?.name ?? g.fellowshipMinistry?.name)
+                  .filter(Boolean)
+                  .join(", ");
+                return (
+                  <tr key={m.id} className="border-b border-slate-100">
+                    <td className="px-3 py-2">
+                      {photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={photo}
+                          alt=""
+                          className="h-10 w-10 rounded object-cover"
+                        />
+                      ) : (
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-xs text-slate-400">
+                          —
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 font-medium">
+                      {m.lastName}, {m.firstName}
+                    </td>
+                    <td className="px-3 py-2 text-slate-600">{m.memberNumber}</td>
+                    <td className="px-3 py-2">
+                      {m.branch.name}
+                      {m.branch.isInternational ? (
+                        <span className="ml-1 text-xs text-slate-500">(intl)</span>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-2 text-slate-600">{groups || "—"}</td>
+                    <td className="px-3 py-2">{m.status}</td>
+                    <td className="px-3 py-2 print:hidden">
+                      <Link
+                        href={`/members/${m.id}`}
+                        className="text-sky-800 hover:underline"
+                      >
+                        Open
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </MembersAppShell>
   );
 }

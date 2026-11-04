@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { roleLabel } from "@/lib/role-labels";
 import { ALL_ROLES } from "@/lib/roles";
 import type { AdminActionResult } from "@/lib/admin/actions";
 
@@ -46,7 +47,7 @@ export function CreateUserForm({
           >
             {ALL_ROLES.map((r) => (
               <option key={r} value={r}>
-                {r}
+                {roleLabel(r)}
               </option>
             ))}
           </select>
@@ -148,7 +149,7 @@ export function UpdateUserForm({
           >
             {ALL_ROLES.map((r) => (
               <option key={r} value={r}>
-                {r}
+                {roleLabel(r)}
               </option>
             ))}
           </select>
