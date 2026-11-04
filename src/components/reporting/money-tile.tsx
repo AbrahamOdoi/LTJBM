@@ -12,7 +12,7 @@ export function MoneyTile({
   return (
     <div className="lt-panel p-4">
       <p className="text-sm text-[var(--lt-muted)]">{label}</p>
-      <p className="mt-1 font-display text-2xl">
+      <p className="mt-1 text-2xl font-semibold tracking-tight">
         <MoneyCell value={value} emphasize={emphasize} />
       </p>
     </div>

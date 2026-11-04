@@ -10,21 +10,17 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="lt-login-canvas flex items-center justify-center p-6">
-      <div className="lt-enter w-full max-w-lg">
-        <div className="lt-brand-in mb-8">
-          <p className="text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[var(--lt-brass)]">
+    <main className="lt-login-canvas flex min-h-screen items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--lt-muted)]">
             Living Testimonies for Jesus Bible Ministry
           </p>
-          <h1 className="font-display mt-3 text-4xl font-semibold tracking-tight text-[#f2f7f4]">
-            LTJBM
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--lt-ink)]">
+            Sign in to LTJBM
           </h1>
-          <p className="mt-1 font-display text-xl text-[#c5d9cf]">
+          <p className="mt-2 text-sm text-[var(--lt-muted)]">
             Church membership &amp; contributions
-          </p>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-[#a8c0b4]">
-            Sign in to care for members, record Head Office contributions, or
-            review Board reports — according to your ministry role.
           </p>
         </div>
         <LoginForm />

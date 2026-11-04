@@ -19,12 +19,10 @@ export function MembersAppShell({
   const writeOk = canWriteMembers(role);
 
   const subNav = [
-    { href: "/members", label: "Member register" },
-    ...(writeOk
-      ? [{ href: "/members/new", label: "Register member" }]
-      : []),
-    { href: "/members/duplicates", label: "Possible duplicates" },
-    { href: "/members/print", label: "Print list" },
+    { href: "/members", label: "Register" },
+    ...(writeOk ? [{ href: "/members/new", label: "Add member" }] : []),
+    { href: "/members/duplicates", label: "Duplicates" },
+    { href: "/members/print", label: "Print" },
   ];
 
   return (
@@ -35,7 +33,6 @@ export function MembersAppShell({
       userName={userName}
       active="members"
       subNav={subNav}
-      banner="Members — membership records only; Head Office handles contributions"
     >
       {children}
     </AppShell>

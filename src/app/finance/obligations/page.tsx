@@ -43,10 +43,10 @@ export default async function ObligationsPage({
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--lt-ink)]">
+        <h2 className="text-2xl font-semibold tracking-tight text-[var(--lt-ink)]">
           Pledges &amp; contribution obligations
         </h2>
-        <p className="mt-1.5 text-sm text-[var(--lt-muted)]">
+        <p className="mt-1 text-sm text-[var(--lt-muted)]">
           Pledge (instalments), Special Project (targets), Tithe, Dues,
           Thanksgiving — Head Office posting only.
         </p>
@@ -87,7 +87,7 @@ export default async function ObligationsPage({
       ) : (
         <div className="lt-table-wrap">
           <table className="min-w-full text-sm">
-            <thead className="bg-[#f3f7f5] text-left text-[var(--lt-muted)]">
+            <thead className="bg-[#f9fafb] text-left text-[var(--lt-muted)]">
               <tr>
                 <th className="px-4 py-3 font-medium">Member</th>
                 <th className="px-4 py-3 font-medium">Type</th>
