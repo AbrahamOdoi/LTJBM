@@ -26,6 +26,10 @@ type Initial = {
   householdName?: string | null;
   householdRelation?: string | null;
   photoUrl?: string | null;
+  joinedAt?: string | null;
+  baptismDate?: string | null;
+  confirmationDate?: string | null;
+  registerAs?: "Active" | "Visitor";
 };
 
 type Props = {
@@ -143,6 +147,56 @@ export function MemberForm({
             name="email"
             disabled={readOnly}
             defaultValue={initial?.email ?? ""}
+            className={inputClass}
+          />
+        </label>
+      </section>
+
+      <section className="grid gap-4 rounded-xl border border-slate-200 bg-white/90 p-5 sm:grid-cols-2">
+        <h2 className="sm:col-span-2 text-sm font-medium uppercase tracking-wide text-slate-500">
+          Church journey
+        </h2>
+        {mode === "create" ? (
+          <label className="text-sm sm:col-span-2">
+            Register as
+            <select
+              name="registerAs"
+              disabled={readOnly}
+              defaultValue={initial?.registerAs ?? "Active"}
+              className={inputClass}
+            >
+              <option value="Active">Member (active)</option>
+              <option value="Visitor">Visitor / first-timer</option>
+            </select>
+          </label>
+        ) : null}
+        <label className="text-sm">
+          Joined / received
+          <input
+            type="date"
+            name="joinedAt"
+            disabled={readOnly}
+            defaultValue={initial?.joinedAt ?? ""}
+            className={inputClass}
+          />
+        </label>
+        <label className="text-sm">
+          Baptism date
+          <input
+            type="date"
+            name="baptismDate"
+            disabled={readOnly}
+            defaultValue={initial?.baptismDate ?? ""}
+            className={inputClass}
+          />
+        </label>
+        <label className="text-sm">
+          Confirmation date
+          <input
+            type="date"
+            name="confirmationDate"
+            disabled={readOnly}
+            defaultValue={initial?.confirmationDate ?? ""}
             className={inputClass}
           />
         </label>

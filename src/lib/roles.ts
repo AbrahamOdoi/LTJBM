@@ -9,6 +9,7 @@ export const Role = {
   PastoralBoard: "PastoralBoard",
   LeadershipCouncil: "LeadershipCouncil",
   Admin: "Admin",
+  Member: "Member",
 } as const;
 
 export type Role = (typeof Role)[keyof typeof Role];
@@ -50,7 +51,7 @@ export function isRecordsClerk(role: Role | string | undefined | null): boolean 
   return role === Role.RecordsClerk;
 }
 
-/** Roles that may open biodata / member register surfaces. */
+/** Roles that may open biodata / member register surfaces (staff — not portal Member). */
 export const MEMBERS_ACCESS_ROLES: readonly Role[] = [
   Role.RecordsClerk,
   Role.BranchLeader,
@@ -178,6 +179,129 @@ export function isReportingPath(pathname: string): boolean {
   );
 }
 
+/** Manual attendance (service / cell check-in) — staff biodata writers + Admin. */
+export const ATTENDANCE_ACCESS_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+  Role.PastoralBoard,
+] as const;
+
+export const ATTENDANCE_WRITE_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+] as const;
+
+export const ATTENDANCE_ROUTE_PREFIXES = ["/attendance", "/api/attendance"] as const;
+
+export function canAccessAttendance(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (ATTENDANCE_ACCESS_ROLES as readonly string[]).includes(role);
+}
+
+export function canWriteAttendance(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (ATTENDANCE_WRITE_ROLES as readonly string[]).includes(role);
+}
+
+export function isAttendancePath(pathname: string): boolean {
+  return ATTENDANCE_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+/**
+ * Pastoral care notes (prayer / visitation) — restricted; never finance.
+ * Pastoral Board + Admin; Branch Leader may write for pastoral ops in unit.
+ */
+export const PASTORAL_ACCESS_ROLES: readonly Role[] = [
+  Role.PastoralBoard,
+  Role.Admin,
+  Role.BranchLeader,
+] as const;
+
+export const PASTORAL_ROUTE_PREFIXES = ["/pastoral", "/api/pastoral"] as const;
+
+export function canAccessPastoral(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (PASTORAL_ACCESS_ROLES as readonly string[]).includes(role);
+}
+
+export function isPastoralPath(pathname: string): boolean {
+  return PASTORAL_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+/** Church events calendar — staff roles (not portal-only Member). */
+export const EVENTS_ACCESS_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+  Role.PastoralBoard,
+  Role.LeadershipCouncil,
+  Role.FinancialSecretary,
+] as const;
+
+export const EVENTS_WRITE_ROLES: readonly Role[] = [
+  Role.RecordsClerk,
+  Role.BranchLeader,
+  Role.Admin,
+] as const;
+
+export const EVENTS_ROUTE_PREFIXES = ["/events", "/api/events"] as const;
+
+export function canAccessEvents(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (EVENTS_ACCESS_ROLES as readonly string[]).includes(role);
+}
+
+export function canWriteEvents(
+  role: Role | string | undefined | null,
+): boolean {
+  if (!role) return false;
+  return (EVENTS_WRITE_ROLES as readonly string[]).includes(role);
+}
+
+export function isEventsPath(pathname: string): boolean {
+  return EVENTS_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+/** Member self-service portal — Member role, or any user with linked memberId (checked in guards). */
+export const PORTAL_ROUTE_PREFIXES = ["/portal", "/api/portal"] as const;
+
+export function isPortalPath(pathname: string): boolean {
+  return PORTAL_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+export function isMemberPortalRole(
+  role: Role | string | undefined | null,
+): boolean {
+  return role === Role.Member;
+}
+
+/** Communications admin stubs — Data Centre only. */
+export const COMMS_ADMIN_ROLES: readonly Role[] = [Role.Admin] as const;
+
+export function canAccessCommsAdmin(
+  role: Role | string | undefined | null,
+): boolean {
+  return role === Role.Admin;
+}
+
 export type DashboardProfile =
   | "membership"
   | "finance"
@@ -193,6 +317,7 @@ export type DashboardProfile =
 export function dashboardProfileForRole(
   role: Role | string | undefined | null,
 ): DashboardProfile | null {
+  if (role === Role.Member) return null;
   if (role === Role.RecordsClerk || role === Role.BranchLeader) {
     return "membership";
   }

@@ -92,7 +92,14 @@ export default async function MembersListPage({
           className="lt-input"
         >
           <option value="">All statuses</option>
-          {["Active", "Inactive", "Transferred", "Deceased", "Suspended"].map(
+          {[
+            "Active",
+            "Visitor",
+            "Inactive",
+            "Transferred",
+            "Deceased",
+            "Suspended",
+          ].map(
             (s) => (
               <option key={s} value={s}>
                 {s}

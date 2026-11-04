@@ -17,11 +17,12 @@ describe("RBAC individual-giving gate", () => {
     assert.equal(canWriteFinance(Role.Admin), true);
   });
 
-  it("denies Board/Council/Clerk/Branch on HQ finance (aggregates via /reports)", () => {
+  it("denies Board/Council/Clerk/Branch/Member on HQ finance (aggregates via /reports)", () => {
     assert.equal(canAccessFinance(Role.PastoralBoard), false);
     assert.equal(canAccessFinance(Role.LeadershipCouncil), false);
     assert.equal(canAccessFinance(Role.RecordsClerk), false);
     assert.equal(canAccessFinance(Role.BranchLeader), false);
+    assert.equal(canAccessFinance(Role.Member), false);
     assert.equal(canWriteFinance(Role.PastoralBoard), false);
   });
 

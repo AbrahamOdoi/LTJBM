@@ -54,6 +54,11 @@ const demoUsers: Array<{
     name: "Leadership Council Member",
     role: "LeadershipCouncil",
   },
+  {
+    email: "member@ltjbm.local",
+    name: "Portal Member",
+    role: "Member",
+  },
 ];
 
 const FIRST_NAMES = [
@@ -371,11 +376,12 @@ async function seedDomainLists() {
       label: "Member status",
       description: "Status labels for data-entry portal",
       values: [
-        { value: "Active", label: "Active", sortOrder: 1 },
-        { value: "Inactive", label: "Inactive", sortOrder: 2 },
-        { value: "Transferred", label: "Transferred", sortOrder: 3 },
-        { value: "Suspended", label: "Suspended", sortOrder: 4 },
-        { value: "Deceased", label: "Deceased", sortOrder: 5 },
+        { value: "Active", label: "Active member", sortOrder: 1 },
+        { value: "Visitor", label: "Visitor / first-timer", sortOrder: 2 },
+        { value: "Inactive", label: "Inactive", sortOrder: 3 },
+        { value: "Transferred", label: "Transferred", sortOrder: 4 },
+        { value: "Suspended", label: "Suspended", sortOrder: 5 },
+        { value: "Deceased", label: "Deceased", sortOrder: 6 },
       ],
     },
     {
@@ -864,16 +870,160 @@ async function main() {
     });
   }
 
+  // ── Phase D Must-next demo slice
+  const portalMember = financeMembers[0]!;
+  await prisma.member.update({
+    where: { id: portalMember.id },
+    data: {
+      joinedAt: new Date("2019-06-15T00:00:00.000Z"),
+      baptismDate: new Date("2018-03-25T00:00:00.000Z"),
+      confirmationDate: new Date("2018-12-02T00:00:00.000Z"),
+    },
+  });
+  await prisma.user.update({
+    where: { email: "member@ltjbm.local" },
+    data: { memberId: portalMember.id, name: `${portalMember.firstName} ${portalMember.lastName}` },
+  });
+
+  const visitor = await prisma.member.upsert({
+    where: { memberNumber: "VIS-001" },
+    update: { status: "Visitor", firstName: "Efua", lastName: "Firstimer" },
+    create: {
+      memberNumber: "VIS-001",
+      firstName: "Efua",
+      lastName: "Firstimer",
+      phone: "+233209990001",
+      status: "Visitor",
+      joinedAt: new Date(),
+      branchId: eastLegon.id,
+      country: "Ghana",
+    },
+  });
+  const clerk = await prisma.user.findUniqueOrThrow({
+    where: { email: "clerk@ltjbm.local" },
+  });
+  const existingFollowUp = await prisma.visitorFollowUp.findFirst({
+    where: { memberId: visitor.id, status: { in: ["Open", "InProgress"] } },
+  });
+  if (!existingFollowUp) {
+    await prisma.visitorFollowUp.create({
+      data: {
+        memberId: visitor.id,
+        status: "Open",
+        firstVisitOn: new Date(),
+        nextActionOn: new Date(Date.now() + 3 * 86400000),
+        notes: "Welcome call — invite to cell",
+        createdById: clerk.id,
+        assignedToId: clerk.id,
+      },
+    });
+  }
+
+  const firstTimerTag = await prisma.tag.upsert({
+    where: { name: "First-timer" },
+    update: {},
+    create: { name: "First-timer", color: "#0ea5e9" },
+  });
+  await prisma.memberTag.upsert({
+    where: {
+      memberId_tagId: { memberId: visitor.id, tagId: firstTimerTag.id },
+    },
+    update: {},
+    create: { memberId: visitor.id, tagId: firstTimerTag.id },
+  });
+  await prisma.memberMilestone.createMany({
+    data: [
+      {
+        memberId: portalMember.id,
+        kind: "Baptism",
+        occurredOn: new Date("2018-03-25T00:00:00.000Z"),
+        title: "Baptised at HQ Accra",
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+  const attCount = await prisma.attendanceSession.count();
+  if (attCount === 0) {
+    const att = await prisma.attendanceSession.create({
+      data: {
+        kind: "Service",
+        label: "Sunday worship (demo)",
+        heldAt: new Date(),
+        branchId: eastLegon.id,
+        headcount: 86,
+      },
+    });
+    await prisma.attendanceRecord.create({
+      data: {
+        sessionId: att.id,
+        memberId: portalMember.id,
+        present: true,
+        markedById: clerk.id,
+      },
+    });
+  }
+
+  const eventCount = await prisma.churchEvent.count();
+  if (eventCount === 0) {
+    await prisma.churchEvent.create({
+      data: {
+        title: "Youth convention",
+        description: "Annual youth gathering — demo calendar event.",
+        startsAt: new Date(Date.now() + 14 * 86400000),
+        location: "HQ Accra auditorium",
+        branchId: hq.id,
+        capacity: 200,
+      },
+    });
+  }
+
+  const pastoralCount = await prisma.pastoralCareNote.count();
+  if (pastoralCount === 0) {
+    const boardUser = await prisma.user.findUniqueOrThrow({
+      where: { email: "board@ltjbm.local" },
+    });
+    await prisma.pastoralCareNote.create({
+      data: {
+        kind: "Prayer",
+        title: "Family healing",
+        body: "Please keep the Mensah family in prayer (demo note — restricted).",
+        memberId: portalMember.id,
+        authorId: boardUser.id,
+        isPrivate: true,
+      },
+    });
+  }
+
+  for (const ch of [
+    { kind: "Email" as const, label: "Email (SMTP)" },
+    { kind: "Sms" as const, label: "SMS" },
+    { kind: "WhatsApp" as const, label: "WhatsApp" },
+    { kind: "Push" as const, label: "Push notifications" },
+  ]) {
+    await prisma.communicationChannel.upsert({
+      where: { kind: ch.kind },
+      update: {},
+      create: {
+        kind: ch.kind,
+        label: ch.label,
+        isEnabled: false,
+        notes: "Stub until provider credentials are configured.",
+      },
+    });
+  }
+
   await prisma.auditLog.create({
     data: {
       action: "system.seed",
       entityType: "System",
       metadata: {
         message:
-          "Phase A platform + members + finance + reporting + admin seed completed",
+          "Platform + members + finance + reporting + admin + Phase D Must-next seed completed",
         hqBranchId: hq.id,
         financeDemoMembers: financeMembers.map((m) => m.memberNumber),
         boardTemplateId: boardTemplate.id,
+        portalMemberNumber: portalMember.memberNumber,
       },
     },
   });
@@ -893,6 +1043,7 @@ async function main() {
     console.log(`  - ${u.email} (${u.role})`);
   }
   console.log("Finance demo members: FIN-001, FIN-002, FIN-003");
+  console.log("Portal: member@ltjbm.local → FIN-001");
   console.log(`Board report template: ${boardTemplate.name} (${boardTemplate.id})`);
 }
 

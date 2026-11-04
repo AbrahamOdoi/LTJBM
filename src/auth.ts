@@ -29,6 +29,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.memberId =
+          "memberId" in user && typeof user.memberId === "string"
+            ? user.memberId
+            : undefined;
         token.isActive = true;
         token.roleCheckedAt = Date.now();
       }
@@ -40,15 +44,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (user || shouldRefresh) {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id },
-            select: { role: true, isActive: true },
+            select: { role: true, isActive: true, memberId: true },
           });
           if (!dbUser || !dbUser.isActive) {
             token.isActive = false;
             token.role = undefined;
+            token.memberId = undefined;
             token.roleCheckedAt = Date.now();
             return token;
           }
           token.role = dbUser.role as Role;
+          token.memberId = dbUser.memberId ?? undefined;
           token.isActive = true;
           token.roleCheckedAt = Date.now();
         }
@@ -64,6 +70,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as typeof session.user.role;
+        session.user.memberId =
+          typeof token.memberId === "string" ? token.memberId : null;
       }
       return session;
     },
@@ -112,6 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
+          memberId: user.memberId,
         };
       },
     }),

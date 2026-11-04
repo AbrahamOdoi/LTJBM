@@ -43,7 +43,15 @@ export async function listMembers(opts: {
     ...memberBranchWhere(scoped),
     ...(opts.branchId ? { branchId: opts.branchId } : {}),
     ...(opts.status
-      ? { status: opts.status as "Active" | "Inactive" | "Transferred" | "Deceased" | "Suspended" }
+      ? {
+          status: opts.status as
+            | "Active"
+            | "Visitor"
+            | "Inactive"
+            | "Transferred"
+            | "Deceased"
+            | "Suspended",
+        }
       : {}),
     ...(opts.q
       ? {
@@ -155,6 +163,13 @@ export async function getMemberDetail(user: SessionUserLike, memberId: string) {
           toBranch: { select: { id: true, name: true, code: true, country: true } },
           changedBy: { select: { id: true, name: true, email: true } },
         },
+      },
+      tags: { include: { tag: true }, orderBy: { createdAt: "asc" } },
+      milestones: { orderBy: { occurredOn: "desc" }, take: 20 },
+      followUps: {
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: { assignedTo: { select: { name: true } } },
       },
     },
   });

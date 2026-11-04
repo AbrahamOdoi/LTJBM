@@ -21,6 +21,8 @@ export function MembersAppShell({
   const subNav = [
     { href: "/members", label: "Register" },
     ...(writeOk ? [{ href: "/members/new", label: "Add member" }] : []),
+    { href: "/members/follow-ups", label: "Visitor follow-ups" },
+    { href: "/members/milestones", label: "Milestones" },
     { href: "/members/duplicates", label: "Duplicates" },
     { href: "/members/print", label: "Print" },
   ];

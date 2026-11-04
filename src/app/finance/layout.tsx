@@ -5,6 +5,8 @@ import { accessModeLabel } from "@/lib/role-labels";
 const subNav = [
   { href: "/finance", label: "Overview" },
   { href: "/finance/obligations", label: "Pledges & obligations" },
+  { href: "/finance/campaigns", label: "Special projects" },
+  { href: "/finance/statements", label: "Statements" },
   { href: "/finance/batches", label: "Saturday collections" },
   { href: "/finance/arrears", label: "Dues arrears" },
 ];
