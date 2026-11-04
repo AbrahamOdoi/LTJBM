@@ -10,6 +10,7 @@ import {
   canAccessMembers,
   canAccessPastoral,
   canAccessReporting,
+  canAccessVolunteers,
   canEditReportTemplates,
   canWriteAttendance,
   canWriteEvents,
@@ -17,6 +18,7 @@ import {
   canWriteGroups,
   canWriteMedia,
   canWriteMembers,
+  canWriteVolunteers,
   type Role,
 } from "@/lib/roles";
 
@@ -209,6 +211,25 @@ export async function requireMediaWrite() {
   if (!canWriteMedia(session.user.role)) {
     throw new AuthGuardError(
       "Sermon library write denied for this role.",
+      403,
+    );
+  }
+  return session;
+}
+
+export async function requireVolunteersAccess() {
+  const session = await requireSession();
+  if (!canAccessVolunteers(session.user.role)) {
+    throw new AuthGuardError("Volunteer scheduling access denied.", 403);
+  }
+  return session;
+}
+
+export async function requireVolunteersWrite() {
+  const session = await requireVolunteersAccess();
+  if (!canWriteVolunteers(session.user.role)) {
+    throw new AuthGuardError(
+      "Volunteer write denied. Board/Council may view schedules only.",
       403,
     );
   }
